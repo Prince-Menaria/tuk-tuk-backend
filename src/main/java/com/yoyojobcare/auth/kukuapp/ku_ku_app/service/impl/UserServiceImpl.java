@@ -51,11 +51,11 @@ class UserServiceImpl implements UserService {
             User save = this.userRepository.save(saveUser);
             AddUserServiceResponseDto response = new AddUserServiceResponseDto();
             response.setUserid(save.getUserId());
+            return response;
         } catch (Exception e) {
             log.error("Error in saveUser(): {}", e.getMessage(), e);
             throw new RuntimeException("Failed to save user: " + e.getMessage());
         }
-        return null;
     }
 
     @Override
