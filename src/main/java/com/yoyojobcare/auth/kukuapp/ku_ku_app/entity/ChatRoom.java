@@ -1,0 +1,68 @@
+// // ChatRoom Entity
+// package com.yoyojobcare.auth.kukuapp.ku_ku_app.entity;
+
+// import java.time.LocalDateTime;
+// import java.util.ArrayList;
+// import java.util.List;
+// import jakarta.persistence.*;
+// import lombok.Data;
+// import lombok.EqualsAndHashCode;
+
+// @Entity
+// @Table(name = "chat_rooms")
+// @Data
+// @EqualsAndHashCode(callSuper = true)
+// public class ChatRoom extends BaseEntity {
+
+//     @Id
+//     @GeneratedValue(strategy = GenerationType.IDENTITY)
+//     private Long roomId;
+
+//     @Column(nullable = false, length = 100)
+//     private String roomName;
+
+//     @Column(length = 500)
+//     private String description;
+
+//     @Enumerated(EnumType.STRING)
+//     private RoomType roomType = RoomType.PUBLIC;
+
+//     @Enumerated(EnumType.STRING)
+//     private RoomCategory category = RoomCategory.FUN;
+
+//     @Column(nullable = false)
+//     private Long hostId;
+
+//     private String hostName;
+//     private String roomPassword; // For private rooms
+//     private String backgroundMusic;
+//     private String roomImage;
+
+//     private Integer maxParticipants = 12;
+//     private Integer currentParticipants = 0;
+
+//     private Boolean isActive = true;
+//     private Boolean isLocked = false;
+
+//     // Agora channel details
+//     @Column(unique = true)
+//     private String agoraChannelName;
+//     private String agoraToken;
+//     private LocalDateTime tokenExpiryTime;
+
+//     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+//     private List<RoomParticipant> participants = new ArrayList<>();
+
+//     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+//     private List<ChatMessage> messages = new ArrayList<>();
+// }
+
+// // Room Type Enum
+// public enum RoomType {
+//     PUBLIC, PRIVATE
+// }
+
+// // Room Category Enum
+// public enum RoomCategory {
+//     MUSIC, FUN, DATING, GAMES, TALK, EDUCATION
+// }
