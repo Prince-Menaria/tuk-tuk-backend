@@ -62,11 +62,12 @@ public class SecurityConfig {
 
                                 // ✅ Session stateless — REST API session use nahi karta
                                 .sessionManagement(session -> session
-                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
                                 .authorizeHttpRequests(auth -> auth
                                                 // ✅ Ye sab PUBLIC — koi authentication nahi chahiye
                                                 .requestMatchers(
+                                                                "/**",
                                                                 "/public/**",
                                                                 "/oauth2/**",
                                                                 "/login/**",
