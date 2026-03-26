@@ -32,6 +32,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String picture = oAuth2User.getAttribute("picture");
         String locale = oAuth2User.getAttribute("locale");
 
+        System.err.println("hello");
         // Build UserInfo object
         // UserInfo userInfo = UserInfo.builder()
         // .googleId(googleId)
