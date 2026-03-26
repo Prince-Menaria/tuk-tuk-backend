@@ -78,6 +78,7 @@ public class SecurityConfig {
                                                                 "/api/v1/**" // ✅ Saare API endpoints public
                                                 ).permitAll()
                                                 .anyRequest().authenticated())
+                                                
 
                                 // ✅ Google OAuth2 Login
                                 .oauth2Login(oauth -> oauth
