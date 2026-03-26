@@ -13,7 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -34,9 +34,10 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final ObjectMapper objectMapper;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @Value("${app.frontend.url:}")
+    private String frontendUrl;
 
     @Override
     public void onAuthenticationSuccess(
@@ -68,16 +69,19 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             // Create token response
             Map<String, Object> tokenResponse = createTokenResponse(user, accessToken, refreshToken);
 
-            // Generate HTML response with tokens
-            String htmlResponse = generateSuccessPage(tokenResponse);
+            // Check if request is from Flutter app
+            String userAgent = request.getHeader("User-Agent");
+            String acceptHeader = request.getHeader("Accept");
+            
+            if (isFlutterRequest(userAgent, acceptHeader)) {
+                // Return JSON for Flutter
+                sendJsonResponse(response, tokenResponse);
+            } else {
+                // Return HTML for web browsers
+                sendHtmlResponse(response, tokenResponse);
+            }
 
-            // Set response
-            response.setContentType("text/html; charset=UTF-8");
-            response.setStatus(HttpServletResponse.SC_OK);
-            response.getWriter().write(htmlResponse);
-            response.getWriter().flush();
-
-            log.info("✅ JWT tokens generated and displayed for user: {}", user.getUserId());
+            log.info("✅ JWT tokens generated for user: {}", user.getUserId());
 
         } catch (Exception e) {
             log.error("❌ Error in OAuth2 success handler: {}", e.getMessage(), e);
@@ -85,6 +89,63 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         }
     }
 
+    private boolean isFlutterRequest(String userAgent, String acceptHeader) {
+        // Check if request is from Flutter app
+        return (acceptHeader != null && acceptHeader.contains("application/json")) ||
+               (userAgent != null && userAgent.toLowerCase().contains("flutter")) ||
+               // You can add more Flutter-specific detection logic
+               false;
+    }
+
+    private void sendJsonResponse(HttpServletResponse response, Map<String, Object> tokenResponse) throws IOException {
+        response.setContentType("application/json; charset=UTF-8");
+        response.setStatus(HttpServletResponse.SC_OK);
+        
+        Map<String, Object> jsonResponse = new HashMap<>();
+        jsonResponse.put("success", true);
+        jsonResponse.put("message", "Login successful");
+        jsonResponse.put("data", tokenResponse);
+        
+        String jsonString = objectMapper.writeValueAsString(jsonResponse);
+        response.getWriter().write(jsonString);
+        response.getWriter().flush();
+        
+        log.info("📱 JSON response sent for Flutter app");
+    }
+
+    private void sendHtmlResponse(HttpServletResponse response, Map<String, Object> tokenResponse) throws IOException {
+        // Check if we should redirect to frontend
+        if (frontendUrl != null && !frontendUrl.isEmpty()) {
+            String redirectUrl = buildFrontendRedirectUrl(tokenResponse);
+            response.sendRedirect(redirectUrl);
+            log.info("🌐 Redirecting to frontend: {}", redirectUrl);
+        } else {
+            // Send HTML page with tokens
+            String htmlResponse = generateSuccessPage(tokenResponse);
+            response.setContentType("text/html; charset=UTF-8");
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.getWriter().write(htmlResponse);
+            response.getWriter().flush();
+            log.info("🌐 HTML response sent for web browser");
+        }
+    }
+
+    private String buildFrontendRedirectUrl(Map<String, Object> tokenResponse) {
+        // Build URL with tokens as query parameters (for frontend)
+        StringBuilder url = new StringBuilder(frontendUrl);
+        url.append("?success=true");
+        url.append("&accessToken=").append(tokenResponse.get("accessToken"));
+        url.append("&refreshToken=").append(tokenResponse.get("refreshToken"));
+        
+        Map<?, ?> user = (Map<?, ?>) tokenResponse.get("user");
+        url.append("&userId=").append(user.get("userId"));
+        url.append("&email=").append(user.get("email"));
+        
+        return url.toString();
+    }
+
+    // ... (rest of your existing methods remain the same)
+    
     private User createNewUser(String email, String name, String picture) {
         try {
             User user = new User();
@@ -94,12 +155,10 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             user.setProvider(Provider.GOOGLE);
             user.setEnable(true);
 
-            // Assign default role
             Role userRole = roleRepository.findByName("USER")
                     .orElseGet(() -> createDefaultRole());
 
             user.setRoles(Set.of(userRole));
-
             log.info("🆕 Creating new user: {}", email);
             return user;
         } catch (Exception e) {
@@ -155,153 +214,29 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     }
 
     private String generateSuccessPage(Map<String, Object> response) {
-        Map<?, ?> user = (Map<?, ?>) response.get("user");
-        
-        StringBuilder html = new StringBuilder();
-        
-        // HTML Header
-        html.append("<!DOCTYPE html>");
-        html.append("<html lang='en'>");
-        html.append("<head>");
-        html.append("<meta charset='UTF-8'>");
-        html.append("<meta name='viewport' content='width=device-width, initial-scale=1.0'>");
-        html.append("<title>Login Success - TukTuk Chat</title>");
-        html.append(getCSS());
-        html.append("</head>");
-        
-        // HTML Body
-        html.append("<body>");
-        html.append("<div class='container'>");
-        html.append(getHeader());
-        html.append("<div class='content'>");
-        html.append(getUserInfo(user));
-        html.append(getTokenSection("Access Token", "accessToken", (String) response.get("accessToken")));
-        html.append(getTokenSection("Refresh Token", "refreshToken", (String) response.get("refreshToken")));
-        html.append(getInstructions(user));
-        html.append(getJsonResponse(response));
-        html.append("</div>");
-        html.append("</div>");
-        html.append(getJavaScript());
-        html.append("</body>");
-        html.append("</html>");
-        
-        return html.toString();
-    }
-
-    private String getCSS() {
-        return "<style>" +
-                "* { margin: 0; padding: 0; box-sizing: border-box; }" +
-                "body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }" +
-                ".container { max-width: 800px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; }" +
-                ".header { background: linear-gradient(135deg, #28a745, #20c997); color: white; padding: 30px; text-align: center; }" +
-                ".content { padding: 30px; }" +
-                ".user-info { background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 25px; border-left: 5px solid #28a745; }" +
-                ".token-section { margin-bottom: 25px; }" +
-                ".token-box { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; font-family: monospace; font-size: 12px; word-break: break-all; margin: 10px 0; }" +
-                ".copy-btn { background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 12px; margin-top: 10px; }" +
-                ".copy-btn:hover { background: #0056b3; }" +
-                ".success-icon { font-size: 48px; margin-bottom: 15px; }" +
-                ".instructions { background: #e7f3ff; border: 1px solid #b6d7ff; border-radius: 8px; padding: 20px; margin-top: 20px; }" +
-                ".endpoint { background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 8px 12px; font-family: monospace; font-size: 13px; margin: 5px 0; }" +
-                "h3 { color: #333; margin-bottom: 10px; }" +
-                ".json-response { background: #2d3748; color: #e2e8f0; padding: 20px; border-radius: 8px; font-family: monospace; font-size: 12px; white-space: pre-wrap; margin: 15px 0; overflow-x: auto; }" +
-                "</style>";
-    }
-
-    private String getHeader() {
-        return "<div class='header'>" +
-                "<div class='success-icon'>🎉</div>" +
-                "<h1>Login Successful!</h1>" +
-                "<p>Welcome to TukTuk Chat</p>" +
-                "</div>";
-    }
-
-    private String getUserInfo(Map<?, ?> user) {
-        return "<div class='user-info'>" +
-                "<h3>👤 User Information</h3>" +
-                "<p><strong>User ID:</strong> " + user.get("userId") + "</p>" +
-                "<p><strong>Name:</strong> " + user.get("fullName") + "</p>" +
-                "<p><strong>Email:</strong> " + user.get("email") + "</p>" +
-                "<p><strong>Provider:</strong> " + user.get("provider") + "</p>" +
-                "</div>";
-    }
-
-    private String getTokenSection(String title, String id, String token) {
-        return "<div class='token-section'>" +
-                "<h3>🔑 " + title + " (Copy for API requests)</h3>" +
-                "<div class='token-box' id='" + id + "'>" + token + "</div>" +
-                "<button class='copy-btn' onclick='copyToClipboard(\"" + id + "\")'>📋 Copy " + title + "</button>" +
-                "</div>";
-    }
-
-    private String getInstructions(Map<?, ?> user) {
-        return "<div class='instructions'>" +
-                "<h3>📋 How to use these tokens in Postman:</h3>" +
-                "<ol>" +
-                "<li><strong>Copy the Access Token</strong> above</li>" +
-                "<li><strong>In Postman</strong>, go to Headers tab</li>" +
-                "<li><strong>Add Header:</strong> <code>Authorization: Bearer [PASTE_ACCESS_TOKEN_HERE]</code></li>" +
-                "<li><strong>Test these API endpoints:</strong></li>" +
-                "</ol>" +
-                "<h4>🔗 API Endpoints to test:</h4>" +
-                "<div class='endpoint'>GET http://localhost:8083/api/v1/auth/me</div>" +
-                "<div class='endpoint'>GET http://localhost:8083/api/v1/auth/dashboard</div>" +
-                "<div class='endpoint'>GET http://localhost:8083/api/v1/user-profile/profile-info-by-id?userId=" + user.get("userId") + "</div>" +
-                "<h4>🔄 Refresh Token:</h4>" +
-                "<div class='endpoint'>POST http://localhost:8083/api/v1/auth/refresh</div>" +
-                "<p><small>Body: {\"refreshToken\": \"YOUR_REFRESH_TOKEN\"}</small></p>" +
-                "</div>";
-    }
-
-    private String getJsonResponse(Map<String, Object> response) {
         try {
-            String jsonString = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(response);
-            return "<div class='json-response'>" + jsonString + "</div>";
+             // Your existing HTML generation code
+        return "<!DOCTYPE html><html><head><title>Success</title></head><body>" +
+               "<h1>Login Successful!</h1>" +
+               "<script>console.log(" + objectMapper.writeValueAsString(response) + ");</script>" +
+               "</body></html>";
+            
         } catch (Exception e) {
-            return "<div class='json-response'>" + response.toString() + "</div>";
+           e.printStackTrace();
         }
-    }
-
-    private String getJavaScript() {
-        return "<script>" +
-                "function copyToClipboard(elementId) {" +
-                "const element = document.getElementById(elementId);" +
-                "const text = element.textContent;" +
-                "navigator.clipboard.writeText(text).then(function() {" +
-                "alert('✅ Token copied to clipboard!');" +
-                "}, function(err) {" +
-                "console.error('❌ Could not copy text: ', err);" +
-                "const textArea = document.createElement('textarea');" +
-                "textArea.value = text;" +
-                "document.body.appendChild(textArea);" +
-                "textArea.focus();" +
-                "textArea.select();" +
-                "try {" +
-                "document.execCommand('copy');" +
-                "alert('✅ Token copied to clipboard!');" +
-                "} catch (err) {" +
-                "alert('❌ Please copy the token manually');" +
-                "}" +
-                "document.body.removeChild(textArea);" +
-                "});" +
-                "}" +
-                "</script>";
+        return null;
+       
     }
 
     private void handleError(HttpServletResponse response, Exception e) throws IOException {
         response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-        response.setContentType("text/html; charset=UTF-8");
+        response.setContentType("application/json; charset=UTF-8");
         
-        String errorPage = "<!DOCTYPE html>" +
-                "<html>" +
-                "<head><title>Login Error</title></head>" +
-                "<body>" +
-                "<h1>❌ Login Error</h1>" +
-                "<p>Error: " + e.getMessage() + "</p>" +
-                "<a href='/oauth2/authorization/google'>🔄 Try Again</a>" +
-                "</body>" +
-                "</html>";
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("success", false);
+        errorResponse.put("error", e.getMessage());
         
-        response.getWriter().write(errorPage);
+        String jsonString = objectMapper.writeValueAsString(errorResponse);
+        response.getWriter().write(jsonString);
     }
 }
