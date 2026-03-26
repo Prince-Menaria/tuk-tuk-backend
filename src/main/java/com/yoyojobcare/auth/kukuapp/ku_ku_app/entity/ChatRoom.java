@@ -1,68 +1,73 @@
-// // ChatRoom Entity
-// package com.yoyojobcare.auth.kukuapp.ku_ku_app.entity;
+// ChatRoom Entity
+package com.yoyojobcare.auth.kukuapp.ku_ku_app.entity;
 
-// import java.time.LocalDateTime;
-// import java.util.ArrayList;
-// import java.util.List;
-// import jakarta.persistence.*;
-// import lombok.Data;
-// import lombok.EqualsAndHashCode;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
-// @Entity
-// @Table(name = "chat_rooms")
-// @Data
-// @EqualsAndHashCode(callSuper = true)
-// public class ChatRoom extends BaseEntity {
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.enumEntity.RoomCategory;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.enumEntity.RoomType;
 
-//     @Id
-//     @GeneratedValue(strategy = GenerationType.IDENTITY)
-//     private Long roomId;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-//     @Column(nullable = false, length = 100)
-//     private String roomName;
+@Entity
+@Table(name = "chat_rooms")
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class ChatRoom extends BaseEntity {
 
-//     @Column(length = 500)
-//     private String description;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long roomId;
 
-//     @Enumerated(EnumType.STRING)
-//     private RoomType roomType = RoomType.PUBLIC;
+    @Column(nullable = false, length = 100)
+    private String roomName;
 
-//     @Enumerated(EnumType.STRING)
-//     private RoomCategory category = RoomCategory.FUN;
+    @Column(length = 500)
+    private String description;
 
-//     @Column(nullable = false)
-//     private Long hostId;
+    @Enumerated(EnumType.STRING)
+    private RoomType roomType = RoomType.PUBLIC;
 
-//     private String hostName;
-//     private String roomPassword; // For private rooms
-//     private String backgroundMusic;
-//     private String roomImage;
+    @Enumerated(EnumType.STRING)
+    private RoomCategory category = RoomCategory.FUN;
 
-//     private Integer maxParticipants = 12;
-//     private Integer currentParticipants = 0;
+    @Column(nullable = false)
+    private Long hostId;
 
-//     private Boolean isActive = true;
-//     private Boolean isLocked = false;
+    private String hostName;
+    private String roomPassword; // For private rooms
+    private String backgroundMusic;
+    private String roomImage;
 
-//     // Agora channel details
-//     @Column(unique = true)
-//     private String agoraChannelName;
-//     private String agoraToken;
-//     private LocalDateTime tokenExpiryTime;
+    private Integer maxParticipants = 12;
+    private Integer currentParticipants = 0;
 
-//     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-//     private List<RoomParticipant> participants = new ArrayList<>();
+    private Boolean isActive = true;
+    private Boolean isLocked = false;
 
-//     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-//     private List<ChatMessage> messages = new ArrayList<>();
-// }
+    // Agora channel details
+    @Column(unique = true)
+    private String agoraChannelName;
+    private String agoraToken;
+    private LocalDateTime tokenExpiryTime;
 
-// // Room Type Enum
-// public enum RoomType {
-//     PUBLIC, PRIVATE
-// }
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<RoomParticipant> participants = new ArrayList<>();
 
-// // Room Category Enum
-// public enum RoomCategory {
-//     MUSIC, FUN, DATING, GAMES, TALK, EDUCATION
-// }
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ChatMessage> messages = new ArrayList<>();
+}
+

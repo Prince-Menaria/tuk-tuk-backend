@@ -27,5 +27,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         // Redirect to dashboard after successful login
         getRedirectStrategy().sendRedirect(request, response, "/dashboard");
+        response.getWriter().write("Login successful");
     }
 }
