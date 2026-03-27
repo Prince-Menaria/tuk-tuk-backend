@@ -4,11 +4,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.UserService;
@@ -70,8 +71,10 @@ public class UserController {
 
     @Operation(summary = "User Profile Info", description = "Endpoint to get user profile info")
     @GetMapping("/profile-info-by-id")
-    public ResponseEntity<MobileResponse<ViewByUserIdServiceResponseDto>> editUser(
-            @ModelAttribute ViewByUserIdServiceRequestDto requestDto) {
+    public ResponseEntity<MobileResponse<ViewByUserIdServiceResponseDto>> getUserProfieInfo(
+                                @RequestParam Long userId) {
+            ViewByUserIdServiceRequestDto requestDto = new ViewByUserIdServiceRequestDto();
+            requestDto.setUserId(userId);
         log.info("User Request ::: ", requestDto);
 
         ViewByUserIdServiceResponseDto serviceResponse = this.userService.getUserByUserId(requestDto);
