@@ -1,13 +1,16 @@
 package com.yoyojobcare.auth.kukuapp.ku_ku_app.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.yoyojobcare.auth.kukuapp.ku_ku_app.entity.ChatMessage;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.entity.ChatRoom;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.entity.RoomParticipant;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.entity.User;
@@ -21,11 +24,16 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.repository.RoomParticipantReposito
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.repository.UserRepository;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.VoiceChatService;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.CreateRoomRequestDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.GetRoomDetailsRequestDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.GetRoomListRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.JoinRoomRequestDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.LeaveRoomRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.CreateRoomResponseDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.GetRoomDetailsResponseDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.GetRoomListResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.JoinRoomResponseDto;
-import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.MessageSummaryDto;
-import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.ParticipantSummaryDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.LeaveRoomResponseDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.RoomSummaryDto;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -271,6 +279,161 @@ public class VoiceChatServiceImpl implements VoiceChatService {
 
         }
 
+    }
+
+    @Override
+    public LeaveRoomResponseDto leaveRoom(LeaveRoomRequestDto requestDto) {
+        try {
+            log.info("🚪 User {} leaving room {}",
+                    requestDto.getUserId(), requestDto.getRoomId());
+
+            // Step 1: Validate room और participant
+            ChatRoom room = chatRoomRepository.findById(requestDto.getRoomId())
+                    .orElseThrow(() -> new RuntimeException("Room not found"));
+
+            User user = userRepository.findById(requestDto.getUserId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            RoomParticipant participant = new RoomParticipant();
+            // = participantRepository
+            //         .findByRoomRooIdAndUserUserId(requestDto.getRoomId(), requestDto.getUserId())
+            //         .orElseThrow(() -> new RuntimeException("User is not in this room"));
+
+            // if (participant.getStatus() != ParticipantStatus.ACTIVE) {
+            // throw new VoiceChatException("User is not actively in this room");
+            // }
+
+            // Step 2: Calculate session statistics
+            LocalDateTime joinedAt = participant.getJoinedAt();
+            LocalDateTime leftAt = LocalDateTime.now();
+            long sessionDurationSeconds = java.time.Duration.between(joinedAt, leftAt).getSeconds();
+
+            // Update participant record
+            participant.setStatus(ParticipantStatus.LEFT);
+            // participant.setLeftAt(leftAt);
+            participant.setLastActiveAt(leftAt);
+            // participant.setTotalTimeSpent(sessionDurationSeconds);
+
+            // Clear seat if user was on mic
+            // if (participant.getSeatNumber() != null) {
+            // participant.moveToAudience(); // Clear seat and reset permissions
+            // }
+
+            participantRepository.save(participant);
+
+            // Step 3: Update room participant count
+            // room.decrementParticipantCount();
+
+            // Step 4: Handle special cases
+            String newHostName = null;
+            boolean roomStillActive = true;
+
+            // if (participant.getRole() == ParticipantRole.HOST) {
+            // // Host is leaving - need to transfer ownership या close room
+            // roomStillActive = handleHostLeaving(room, participant);
+            // if (roomStillActive) {
+            // // Get new host name for response
+            // newHostName = chatRoomRepository.findById(room.getRoomId())
+            // .map(ChatRoom::getHostName)
+            // .orElse("System");
+            // }
+            // } else {
+            // chatRoomRepository.save(room); // Just update participant count
+            // }
+
+            // Step 5: Send farewell message
+            // sendSystemMessage(room, "👋 " + user.getFullName() + " ने कमरा छोड़ दिया
+            // है।");
+
+            // Step 6: Broadcast participant update
+            // broadcastParticipantLeft(room, participant);
+
+            // Step 7: Get recommendations for user
+            // List<RoomSummaryDto> recommendedRooms = getRecommendedRoomsForUser(user);
+
+            // Step 8: Build response
+            LeaveRoomResponseDto response = LeaveRoomResponseDto.builder()
+                    .roomId(room.getRoomId())
+                    .userId(user.getUserId())
+                    .userName(user.getFullName())
+                    .joinedAt(joinedAt)
+                    .leftAt(leftAt)
+                    .sessionDurationSeconds(sessionDurationSeconds)
+                    // .messagesPosted(participant.getMessageCount())
+                    // .giftsReceived(participant.getGiftsReceived())
+                    // .giftsGiven(participant.getGiftsGiven())
+                    .leaveReason(requestDto.getLeaveReason() != null ? requestDto.getLeaveReason() : "VOLUNTARY")
+                    .wasKicked(false)
+                    .wasBanned(false)
+                    .remainingParticipants(room.getCurrentParticipants())
+                    .roomStillActive(roomStillActive)
+                    .newHostName(newHostName)
+                    .sessionRating(requestDto.getSessionRating())
+                    .sessionFeedback(requestDto.getSessionFeedback())
+                    // .recommendedRooms(recommendedRooms)
+                    .message("You have left the room successfully. Thank you for participating!")
+                    .success(true)
+                    .build();
+
+            log.info("✅ User {} successfully left room {}", user.getUserId(), room.getRoomId());
+            return response;
+
+        } catch (Exception e) {
+            log.error("💥 Unexpected error leaving room: {}", e.getMessage(), e);
+            return null;
+        }
+
+    }
+
+    @Override
+    public GetRoomListResponseDto getRoomList(GetRoomListRequestDto requestDto) {
+        log.info("get list of rooms request :" + requestDto);
+        try {
+            Pageable pageable = PageRequest.of(requestDto.getPage(), requestDto.getSize());
+            List<ChatRoom> listRooms = this.chatRoomRepository.findAll(pageable).getContent();
+
+            GetRoomListResponseDto getRoomListResponseDto = new GetRoomListResponseDto();
+
+            List<RoomSummaryDto> listRoomsResponse = new LinkedList<>();
+            listRooms.stream()
+                    .map(e -> {
+                        RoomSummaryDto roomSummaryDto = new RoomSummaryDto();
+                        roomSummaryDto.setHostName(e.getHostName());
+                        roomSummaryDto.setRoomId(e.getRoomId());
+                        roomSummaryDto.setRoomImage(e.getRoomImage());
+                        roomSummaryDto.setDescription(e.getDescription());
+                        roomSummaryDto.setCategory(null);
+                        return roomSummaryDto;
+                    }).collect(Collectors.toList());
+
+            getRoomListResponseDto.setRooms(listRoomsResponse);
+
+            return getRoomListResponseDto;
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    @Override
+    public GetRoomDetailsResponseDto getRoomDetails(GetRoomDetailsRequestDto requestDto) {
+        log.info("Get room details request :" + requestDto);
+        try {
+
+            Optional<ChatRoom> getRoom = chatRoomRepository.findById(requestDto.getRoomId());
+            ChatRoom room = getRoom.get();
+            GetRoomDetailsResponseDto responseDto = new GetRoomDetailsResponseDto();
+            if (getRoom.isPresent()) {
+                responseDto.setRoomId(room.getRoomId());
+                responseDto.setRoomName(room.getRoomName());
+                responseDto.setRoomImage(room.getRoomImage());
+                responseDto.setDescription(room.getDescription());
+
+            }
+            return responseDto;
+
+        } catch (Exception e) {
+            throw e;
+        }
     }
 
 }
