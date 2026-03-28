@@ -22,11 +22,13 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Entity
 @Table(name = "users")
 @Data
-@EqualsAndHashCode(callSuper = true)
+@ToString(exclude = {"interests", "rooms", "messages", "password"}) // Add this line
+@EqualsAndHashCode(exclude = {"interests", "rooms", "messages"})
 public class User extends BaseEntity {
 
     @Id
@@ -66,6 +68,12 @@ public class User extends BaseEntity {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private UserAnswers answers;
+
+    @Override
+    public String toString() {
+        return String.format("User{userId=%d, fullName='%s', email='%s'}", 
+                           userId, fullName, email);
+    }
 
     
 

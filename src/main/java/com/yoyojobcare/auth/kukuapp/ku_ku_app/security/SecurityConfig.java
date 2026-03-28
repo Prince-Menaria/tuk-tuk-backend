@@ -73,6 +73,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/me").authenticated()
                 .requestMatchers("/api/v1/auth/dashboard").authenticated()
                 .requestMatchers("/api/v1/user-profile/**").authenticated()
+                .requestMatchers("/api/v1/voice-chat/**").authenticated()
                 .requestMatchers("/dashboard").authenticated()
                 
                 .anyRequest().authenticated())
