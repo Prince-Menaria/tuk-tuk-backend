@@ -66,7 +66,17 @@ public class SecurityConfig {
                     "/hello",
                     "/swagger-ui.html",
                     "/swagger-ui/**",
-                    "/v3/api-docs/**"
+                    "/v3/api-docs/**",
+                    "/ping"
+                ).permitAll()
+
+                // ============ WebSocket endpoints (IMPORTANT!) ============
+                .requestMatchers(
+                    "/ws-chat/**",           // WebSocket endpoint
+                    "/ws-chat",              // Direct WebSocket connection
+                    "/app/**",               // STOMP application destinations
+                    "/topic/**",             // STOMP broker destinations  
+                    "/queue/**"              // STOMP user-specific queues
                 ).permitAll()
                 
                 // Protected endpoints
@@ -74,6 +84,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/dashboard").authenticated()
                 .requestMatchers("/api/v1/user-profile/**").authenticated()
                 .requestMatchers("/api/v1/voice-chat/**").authenticated()
+                .requestMatchers("/api/v1/chat**").authenticated()
                 .requestMatchers("/dashboard").authenticated()
                 
                 .anyRequest().authenticated())
