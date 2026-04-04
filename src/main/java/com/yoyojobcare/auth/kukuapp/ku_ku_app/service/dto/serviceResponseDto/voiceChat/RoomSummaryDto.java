@@ -24,6 +24,6 @@ public class RoomSummaryDto {
     private Boolean isLocked;
     private Boolean canJoin;
     private String language;
-    private List<String> tags;
+    // private List<String> tags;
     private LocalDateTime createdAt;
 }

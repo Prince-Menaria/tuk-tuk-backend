@@ -11,8 +11,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
@@ -32,7 +30,7 @@ import lombok.ToString;
 public class User extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    // @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
     private Long userId;
     private String userName;
@@ -42,7 +40,10 @@ public class User extends BaseEntity {
     private String email;
     private Long mobile;
     private String password;
+
+    @Column(name = "image", columnDefinition = "LONGTEXT")  // ✅ VARCHAR ki jagah TEXT
     private String image;
+
     private String role; // "ADMIN" or "User"
     private boolean enable = Boolean.TRUE;
 

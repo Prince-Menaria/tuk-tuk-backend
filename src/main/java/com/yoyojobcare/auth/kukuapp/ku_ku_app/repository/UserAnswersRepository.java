@@ -11,4 +11,6 @@ public interface UserAnswersRepository extends JpaRepository<UserAnswers, Long> 
     // ✅ Derived query — safest option
     Optional<UserAnswers> findByUserUserId(Long userId);
 
+    void deleteByUserUserId(Long userId);
+
 }

@@ -66,7 +66,9 @@ public class SecurityConfig {
                     "/hello",
                     "/swagger-ui.html",
                     "/swagger-ui/**",
-                    "/v3/api-docs/**"
+                    "/v3/api-docs/**",
+
+                    "/api/v1/user-profile/save-roles"
                 ).permitAll()
                 
                 // Protected endpoints
@@ -74,7 +76,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/dashboard").authenticated()
                 .requestMatchers("/api/v1/user-profile/**").authenticated()
                 .requestMatchers("/api/v1/voice-chat/**").authenticated()
+                .requestMatchers("/api/v1/social/follow/**").authenticated()
                 .requestMatchers("/dashboard").authenticated()
+                
                 
                 .anyRequest().authenticated())
 
