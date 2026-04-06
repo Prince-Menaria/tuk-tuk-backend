@@ -395,7 +395,7 @@ public class VoiceChatServiceImpl implements VoiceChatService {
             GetRoomListResponseDto getRoomListResponseDto = new GetRoomListResponseDto();
 
             List<RoomSummaryDto> listRoomsResponse = new LinkedList<>();
-            listRooms.stream()
+            listRoomsResponse =listRooms.stream()
                     .map(e -> {
                         RoomSummaryDto roomSummaryDto = new RoomSummaryDto();
                         roomSummaryDto.setHostName(e.getHostName());

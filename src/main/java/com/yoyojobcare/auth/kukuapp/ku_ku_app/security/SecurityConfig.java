@@ -77,6 +77,9 @@ public class SecurityConfig {
                     "/app/**",               // STOMP application destinations
                     "/topic/**",             // STOMP broker destinations  
                     "/queue/**"              // STOMP user-specific queues
+
+                    "/api/v1/user-profile/save-roles",
+                    "/ping"
                 ).permitAll()
                 
                 // Protected endpoints
@@ -85,7 +88,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/user-profile/**").authenticated()
                 .requestMatchers("/api/v1/voice-chat/**").authenticated()
                 .requestMatchers("/api/v1/chat**").authenticated()
+                .requestMatchers("/api/v1/social/follow/**").authenticated()
+                .requestMatchers("/api/v1/wallet/**").authenticated()
                 .requestMatchers("/dashboard").authenticated()
+                
                 
                 .anyRequest().authenticated())
 

@@ -23,22 +23,22 @@ public class GetRoomListResponseDto {
     // Room list
     private List<RoomSummaryDto> rooms;
     
-    // Filter information used
-    private String appliedCategory;
-    private String appliedRoomType;
-    private String appliedLanguage;
-    private String searchTerm;
+    // // Filter information used
+    // private String appliedCategory;
+    // private String appliedRoomType;
+    // private String appliedLanguage;
+    // private String searchTerm;
     
-    // Additional data
-    private List<String> availableCategories; // All categories
-    private List<String> availableLanguages; // All languages
-    private Map<String, Integer> categoryCount; // Room count per category
+    // // Additional data
+    // private List<String> availableCategories; // All categories
+    // private List<String> availableLanguages; // All languages
+    // private Map<String, Integer> categoryCount; // Room count per category
     
-    // Trending information
-    private List<RoomSummaryDto> trendingRooms; // Top 5 trending
-    private List<RoomSummaryDto> recommendedRooms; // Personalized recommendations
+    // // Trending information
+    // private List<RoomSummaryDto> trendingRooms; // Top 5 trending
+    // private List<RoomSummaryDto> recommendedRooms; // Personalized recommendations
     
-    // Success information
-    private String message;
-    private Boolean success;
+    // // Success information
+    // private String message;
+    // private Boolean success;
 }

@@ -2,6 +2,7 @@ package com.yoyojobcare.auth.kukuapp.ku_ku_app.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 
@@ -13,9 +14,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.UserService;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.AddRoleServiceRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.AddUserServiceRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.EditUserServiceRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.ViewByUserIdServiceRequestDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.AddRoleServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.AddUserServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.EditUserServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.ViewByUserIdServiceResponseDto;
@@ -44,6 +47,14 @@ public class UserController {
         log.info("User Request ::: ", requestDto);
 
         AddUserServiceResponseDto serviceResponse = this.userService.saveUser(requestDto);
+        if (ObjectUtils.isEmpty(serviceResponse)) {
+            MobileResponse<AddUserServiceResponseDto> response = new MobileResponse<>();
+            response.setData(serviceResponse);
+            response.setMessage("Email already exists ");
+            response.setStatus(Boolean.FALSE);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+
+        }
 
         MobileResponse<AddUserServiceResponseDto> response = new MobileResponse<>();
         response.setData(serviceResponse);
@@ -72,9 +83,9 @@ public class UserController {
     @Operation(summary = "User Profile Info", description = "Endpoint to get user profile info")
     @GetMapping("/profile-info-by-id")
     public ResponseEntity<MobileResponse<ViewByUserIdServiceResponseDto>> getUserProfieInfo(
-                                @RequestParam Long userId) {
-            ViewByUserIdServiceRequestDto requestDto = new ViewByUserIdServiceRequestDto();
-            requestDto.setUserId(userId);
+            @RequestParam Long userId) {
+        ViewByUserIdServiceRequestDto requestDto = new ViewByUserIdServiceRequestDto();
+        requestDto.setUserId(userId);
         log.info("User Request ::: ", requestDto);
 
         ViewByUserIdServiceResponseDto serviceResponse = this.userService.getUserByUserId(requestDto);
@@ -82,6 +93,30 @@ public class UserController {
         MobileResponse<ViewByUserIdServiceResponseDto> response = new MobileResponse<>();
         response.setData(serviceResponse);
         response.setMessage("View user info ");
+        response.setStatus(Boolean.TRUE);
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @Operation(summary = "Add user Profile ", description = "Endpoint to add user profile")
+    @PostMapping("/save-roles")
+    public ResponseEntity<MobileResponse<AddRoleServiceResponseDto>> addRole(
+            @RequestBody AddRoleServiceRequestDto requestDto) {
+        log.info("User Request ::: ", requestDto);
+
+        AddRoleServiceResponseDto serviceResponse = this.userService.setRolesByUserIdAndRoleId(requestDto.getRoleId(), requestDto.getRoleName());
+        // if (ObjectUtils.isEmpty(serviceResponse)) {
+        //     MobileResponse<AddRoleServiceResponseDto> response = new MobileResponse<>();
+        //     response.setData(serviceResponse);
+        //     response.setMessage("Email already exists ");
+        //     response.setStatus(Boolean.FALSE);
+        //     return new ResponseEntity<>(response, HttpStatus.OK);
+
+        // }
+
+        MobileResponse<AddRoleServiceResponseDto> response = new MobileResponse<>();
+        response.setData(serviceResponse);
+        response.setMessage("Roles save Successful..");
         response.setStatus(Boolean.TRUE);
 
         return new ResponseEntity<>(response, HttpStatus.OK);

@@ -43,7 +43,7 @@ public class JwtTokenProvider {
                     .subject(String.valueOf(user.getUserId()))
                     .claim("email", user.getEmail())
                     .claim("fullName", user.getFullName())
-                    .claim("image", user.getImage())
+                    // .claim("image", user.getImage())
                     .claim("roles", roles)
                     .claim("provider", user.getProvider() != null ? user.getProvider().toString() : "LOCAL")
                     .claim("tokenType", "ACCESS")
