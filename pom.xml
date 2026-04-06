@@ -121,6 +121,12 @@
             <version>3.2.4</version>
         </dependency>
 
+        <!-- WebSocket Configration -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

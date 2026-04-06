@@ -1,9 +1,13 @@
 package com.yoyojobcare.auth.kukuapp.ku_ku_app.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.entity.ChatMessage;
 
-public interface ChatMessageRepository extends JpaRepository<ChatMessage , Long> {
+public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
+
+    Page<ChatMessage> findByRoomRoomIdAndIsDeletedFalseOrderByTimestampDesc(Long roomId, Pageable pageable);
 
 }

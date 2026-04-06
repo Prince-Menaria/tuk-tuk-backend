@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.enumEntity.MessageType;
 
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -12,6 +13,7 @@ import lombok.EqualsAndHashCode;
 @Table(name = "chat_messages")
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Builder
 public class ChatMessage extends BaseEntity {
 
     @Id
