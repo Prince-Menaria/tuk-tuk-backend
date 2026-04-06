@@ -1,4 +1,4 @@
-package com.yoyojobcare.auth.kukuapp.ku_ku_app.utility;
+package com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.wallet;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,10 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MobileResponse<T> {
+public class AddRechargePackageResponseDto {
 
-    private boolean status;
-    private String message;
-    private T data;
+    private Long packageId;
 
 }
