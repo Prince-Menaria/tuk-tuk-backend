@@ -16,9 +16,9 @@ WORKDIR /app
 
 COPY --from=build /app/target/ku-ku-app-0.0.1-SNAPSHOT.jar app.jar
 
-# DO NOT set PORT manually
-# Render injects PORT automatically
+# Render dynamic port
+ENV PORT=10000
 
 EXPOSE 10000
 
-ENTRYPOINT ["sh","-c","java -Dserver.port=${PORT} -Dserver.address=0.0.0.0 -jar app.jar"]
+CMD sh -c "java -Dserver.port=$PORT -Dserver.address=0.0.0.0 -jar app.jar"
