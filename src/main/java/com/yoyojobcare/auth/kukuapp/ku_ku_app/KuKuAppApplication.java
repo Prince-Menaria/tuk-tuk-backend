@@ -8,7 +8,7 @@ public class KuKuAppApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(KuKuAppApplication.class, args);
-		System.err.println("ku ku app....");
+		System.err.println("ku ku app...");
 	}
 
 }
