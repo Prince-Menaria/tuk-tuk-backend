@@ -10,15 +10,20 @@ RUN mvn clean package -DskipTests
 
 
 # ---------- RUN STAGE ----------
-FROM eclipse-temurin:17-jdk-jammy
+FROM eclipse-temurin:17-jre-jammy
 
 WORKDIR /app
 
 COPY --from=build /app/target/ku-ku-app-0.0.1-SNAPSHOT.jar app.jar
 
-# Render dynamic port
 ENV PORT=10000
 
 EXPOSE 10000
 
-CMD sh -c "java -Dserver.port=$PORT -Dserver.address=0.0.0.0 -jar app.jar"
+CMD sh -c "java \
+  -Xms256m -Xmx512m \
+  -XX:TieredStopAtLevel=1 \
+  -Dspring.jmx.enabled=false \
+  -Dserver.port=$PORT \
+  -Dserver.address=0.0.0.0 \
+  -jar app.jar"
