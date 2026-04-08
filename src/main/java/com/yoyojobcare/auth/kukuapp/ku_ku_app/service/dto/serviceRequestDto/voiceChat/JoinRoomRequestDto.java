@@ -17,17 +17,17 @@ public class JoinRoomRequestDto {
     // @NotNull(message = "User ID is required")
     private Long userId;
     
-    // Private room के लिए password - optional
-    private String password;
+    // // Private room के लिए password - optional
+    // private String password;
     
-    // Join करने का reason - optional, analytics के लिए
-    private String joinReason; // "SEARCH", "INVITE", "RECOMMENDATION", "DIRECT_LINK"
+    // // Join करने का reason - optional, analytics के लिए
+    // private String joinReason; // "SEARCH", "INVITE", "RECOMMENDATION", "DIRECT_LINK"
     
-    // Client information - debugging के लिए
-    private String clientInfo; // "Android 1.2.3", "iOS 2.1.0"
+    // // Client information - debugging के लिए
+    // private String clientInfo; // "Android 1.2.3", "iOS 2.1.0"
     
-    // User की current location - nearby rooms के लिए (optional)
-    private String userLocation;
+    // // User की current location - nearby rooms के लिए (optional)
+    // private String userLocation;
     
     // // Helper method
     // public boolean isValidForPrivateRoom() {

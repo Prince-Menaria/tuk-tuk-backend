@@ -1,6 +1,7 @@
 package com.yoyojobcare.auth.kukuapp.ku_ku_app.security;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -29,20 +30,42 @@ public class SecurityConfig {
     private final OAuth2FailureHandler oAuth2FailureHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    @Value("${web.socket.set.allowed.origin.patterns}")
+    private String webSocketOrigin;
+
     @Bean
     public ModelMapper modelMapper() {
         return new ModelMapper();
     }
 
+    // @Bean
+    // public CorsConfigurationSource corsConfigurationSource() {
+    //     CorsConfiguration config = new CorsConfiguration();
+    //     config.addAllowedOriginPattern("*");
+    //     config.addAllowedMethod("*");
+    //     config.addAllowedHeader("*");
+    //     config.setAllowCredentials(false);
+
+    //     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    //     source.registerCorsConfiguration("/**", config);
+    //     return source;
+    // }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+
         CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOriginPattern("*");
-        config.addAllowedMethod("*");
+
+        config.setAllowCredentials(true); // ⭐ MOST IMPORTANT
+
+        config.addAllowedOrigin(this.webSocketOrigin);
+        // production me apna frontend URL add karna
+
         config.addAllowedHeader("*");
-        config.setAllowCredentials(false);
+        config.addAllowedMethod("*");
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+
         source.registerCorsConfiguration("/**", config);
         return source;
     }
@@ -68,6 +91,7 @@ public class SecurityConfig {
                     "/swagger-ui/**",
                     "/v3/api-docs/**",
                     "/ping",
+                    "/",
 
                     // ============ WebSocket endpoints (IMPORTANT!) ============
                     "/ws-chat/**",           // WebSocket endpoint

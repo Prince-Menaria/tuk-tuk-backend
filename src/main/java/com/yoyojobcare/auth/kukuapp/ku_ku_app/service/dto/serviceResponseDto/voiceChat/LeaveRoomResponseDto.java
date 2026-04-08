@@ -37,8 +37,8 @@ public class LeaveRoomResponseDto {
     private String newHostName; // If host transfer happened
     
     // User feedback (optional)
-    private Integer sessionRating; // 1-5 stars
-    private String sessionFeedback;
+    // private Integer sessionRating; // 1-5 stars
+    // private String sessionFeedback;
     
     // Recommendations for user
     private List<RoomSummaryDto> recommendedRooms;

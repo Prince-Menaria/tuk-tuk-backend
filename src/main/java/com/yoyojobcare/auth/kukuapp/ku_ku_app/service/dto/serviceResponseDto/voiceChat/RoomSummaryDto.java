@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RoomSummaryDto {
+    private Long hostId;   // jis user ne host kiya means userId
     private Long roomId;
     private String roomName;
     private String description;

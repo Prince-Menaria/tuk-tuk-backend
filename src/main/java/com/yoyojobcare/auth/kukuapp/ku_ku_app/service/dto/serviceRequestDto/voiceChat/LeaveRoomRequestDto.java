@@ -20,11 +20,11 @@ public class LeaveRoomRequestDto {
     // Leave करने का reason - analytics के लिए
     private String leaveReason; // "VOLUNTARY", "KICKED", "NETWORK_ISSUE", "APP_CLOSE"
     
-    // Session feedback - optional
-    private Integer sessionRating; // 1-5 stars
+    // // Session feedback - optional
+    // private Integer sessionRating; // 1-5 stars
     
-    private String sessionFeedback; // Text feedback
+    // private String sessionFeedback; // Text feedback
     
-    // Time spent in session (client calculated)
-    private Long clientSessionTime; // milliseconds
+    // // Time spent in session (client calculated)
+    // private Long clientSessionTime; // milliseconds
 }

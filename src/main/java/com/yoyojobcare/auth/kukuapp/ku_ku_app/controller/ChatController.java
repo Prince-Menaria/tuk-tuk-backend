@@ -2,6 +2,7 @@ package com.yoyojobcare.auth.kukuapp.ku_ku_app.controller;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/v1/chat")
+@CrossOrigin(origins = "*") // CORS configuration - all origins allowed for now
 @RequiredArgsConstructor
 public class ChatController {
 

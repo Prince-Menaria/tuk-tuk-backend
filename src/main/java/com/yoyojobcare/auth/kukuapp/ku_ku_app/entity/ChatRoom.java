@@ -42,7 +42,7 @@ public class ChatRoom extends BaseEntity {
     private RoomType roomType = RoomType.PUBLIC;
 
     @Enumerated(EnumType.STRING)
-    private RoomCategory category = RoomCategory.FUN;
+    private RoomCategory category = RoomCategory.RECOMMEND;
 
     @Column(nullable = false)
     private Long hostId;
@@ -50,6 +50,8 @@ public class ChatRoom extends BaseEntity {
     private String hostName;
     private String roomPassword; // For private rooms
     private String backgroundMusic;
+
+    @Column(name = "room_image", columnDefinition = "LONGTEXT")  // ✅ add karo
     private String roomImage;
 
     private Integer maxParticipants = 12;

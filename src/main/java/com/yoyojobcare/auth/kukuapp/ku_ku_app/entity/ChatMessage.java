@@ -13,8 +13,9 @@ import lombok.EqualsAndHashCode;
 @Table(name = "chat_messages")
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Builder
+// @Builder
 public class ChatMessage extends BaseEntity {
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

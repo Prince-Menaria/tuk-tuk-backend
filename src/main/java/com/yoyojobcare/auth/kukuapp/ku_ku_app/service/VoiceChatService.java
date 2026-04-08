@@ -1,5 +1,7 @@
 package com.yoyojobcare.auth.kukuapp.ku_ku_app.service;
 
+import java.util.List;
+
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.CreateRoomRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.GetRoomDetailsRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.GetRoomListRequestDto;
@@ -10,6 +12,7 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voi
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.GetRoomListResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.JoinRoomResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.LeaveRoomResponseDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.ParticipantResponseDto;
 
 public interface VoiceChatService {
 
@@ -22,5 +25,7 @@ public interface VoiceChatService {
     public GetRoomListResponseDto getRoomList(GetRoomListRequestDto requestDto);
 
     public GetRoomDetailsResponseDto getRoomDetails(GetRoomDetailsRequestDto requestDto);
+
+    public List<ParticipantResponseDto> getRoomParticipants(Long roomId);
 
 }

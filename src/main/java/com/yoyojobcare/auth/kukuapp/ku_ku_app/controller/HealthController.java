@@ -6,6 +6,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class HealthController {
 
+    @GetMapping("/")
+    public String home() {
+        return "KuKu backend running";
+    }
+
     @GetMapping("/ping")
     public String ping() {
         return "OK";

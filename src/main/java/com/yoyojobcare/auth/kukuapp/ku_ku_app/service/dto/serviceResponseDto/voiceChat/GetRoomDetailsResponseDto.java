@@ -1,5 +1,6 @@
 package com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 import lombok.AllArgsConstructor;
@@ -19,17 +20,18 @@ public class GetRoomDetailsResponseDto {
     private String category;
     private String roomLanguage;
     private String tags;
+    private String hostImage;
     
     // Visual elements
     private String roomImage;
     private String backgroundMusic;
-    private String welcomeMessage;
+    // private String welcomeMessage;
     
     // Capacity and restrictions
     private Integer maxParticipants;
     private Integer currentParticipants;
-    private Integer minAge;
-    private Integer maxAge;
+    // private Integer minAge;
+    // private Integer maxAge;
     
     // Host information
     // private UserSummaryDto host;
@@ -50,16 +52,16 @@ public class GetRoomDetailsResponseDto {
     // Room status
     private Boolean isActive;
     private Boolean isLocked;
-    private Boolean isPasswordProtected;
-    private Boolean canUserJoin; // Based on age, bans, etc.
-    private String joinRestrictionReason; // Why user can't join
+    // private Boolean isPasswordProtected;
+    // private Boolean canUserJoin; // Based on age, bans, etc.
+    // private String joinRestrictionReason; // Why user can't join
     
     // Agora details for joining
     private String agoraChannelName;
     private String agoraAppId;
     
     // Timing information
-    private LocalDateTime createdAt;
+    private Instant createdAt;
     private LocalDateTime lastActiveAt;
     private LocalDateTime autoCloseAt;
     

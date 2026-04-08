@@ -44,14 +44,13 @@ public class ChatServiceImpl implements ChatService {
             User sender = userRepository.findById(request.getCurrentUserId())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            ChatMessage message = ChatMessage.builder()
-                    .room(room)
-                    .sender(sender)
-                    .content(request.getContent().trim())
-                    .messageType(request.getMessageType())
-                    .timestamp(LocalDateTime.now())
-                    .isDeleted(false)
-                    .build();
+            ChatMessage message = new ChatMessage();
+            message.setRoom(room);
+            message.setSender(sender);
+            message.setContent(request.getContent().trim());
+            message.setMessageType(request.getMessageType());
+            message.setTimestamp(LocalDateTime.now());
+            message.setIsDeleted(false);
 
             ChatMessage saved = chatMessageRepository.save(message);
 
@@ -79,7 +78,7 @@ public class ChatServiceImpl implements ChatService {
             return response;
 
         } catch (Exception e) {
-            log.error("", e);
+            log.error("Exception get Room Messages : ", e);
             throw e;
         }
     }

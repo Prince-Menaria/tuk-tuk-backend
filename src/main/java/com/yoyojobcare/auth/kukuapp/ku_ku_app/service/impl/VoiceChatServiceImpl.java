@@ -1,16 +1,18 @@
 package com.yoyojobcare.auth.kukuapp.ku_ku_app.service.impl;
 
 import java.time.LocalDateTime;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.config.AgoraConfig;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.entity.ChatRoom;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.entity.RoomParticipant;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.entity.User;
@@ -22,6 +24,7 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.repository.ChatMessageRepository;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.repository.ChatRoomRepository;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.repository.RoomParticipantRepository;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.repository.UserRepository;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.AgoraTokenService;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.VoiceChatService;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.CreateRoomRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.GetRoomDetailsRequestDto;
@@ -33,6 +36,7 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voi
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.GetRoomListResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.JoinRoomResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.LeaveRoomResponseDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.ParticipantResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.RoomSummaryDto;
 
 import lombok.RequiredArgsConstructor;
@@ -43,32 +47,19 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class VoiceChatServiceImpl implements VoiceChatService {
 
-    // ============ Repository Dependencies ============
-    // सभी database operations के लिए repositories को inject करना
     private final ChatRoomRepository chatRoomRepository;
     private final RoomParticipantRepository participantRepository;
     private final UserRepository userRepository;
     private final ChatMessageRepository messageRepository;
-
-    // ============ External Service Dependencies ============
-    // private final SimpMessagingTemplate messagingTemplate; // Real-time messaging
-    // के लिए WebSocket
-    // private final AgoraConfig agoraConfig; // Voice chat token generation के लिए
+    private final AgoraTokenService agoraTokenService; // ✅ inject karo
+    private final AgoraConfig agoraConfig;
 
     @Override
     public CreateRoomResponseDto createRoom(CreateRoomRequestDto requestDto) {
         try {
-            // Step 1: Input validation और logging
             log.info("🏗️ Creating room for user: {} with name: {}",
                     requestDto.getHostId(), requestDto.getRoomName());
 
-            // // Basic validation check
-            // if (!requestDto.isValid()) {
-            // throw new VoiceChatException("Invalid room creation request");
-            // }
-
-            // Step 2: Host user validation - database से user exist करता है या नहीं check
-            // करना
             User hostUser = userRepository.findById(requestDto.getHostId())
                     .orElseThrow(() -> new UsernameNotFoundException(
                             "Host user not found with User ID: " + requestDto.getHostId()));
@@ -80,205 +71,106 @@ public class VoiceChatServiceImpl implements VoiceChatService {
             room.setDescription(requestDto.getDescription());
             room.setHostId(hostUser.getUserId());
             room.setHostName(hostUser.getFullName());
-            // Room capacity और settings
-            room.setMaxParticipants(requestDto.getMaxParticipants() != null ? requestDto.getMaxParticipants() : 12); // Default
-                                                                                                                     // 12
-                                                                                                                     // participants
+            room.setMaxParticipants(requestDto.getMaxParticipants() != null ? requestDto.getMaxParticipants() : 12);
             room.setCurrentParticipants(0);
 
             try {
                 room.setRoomType(RoomType.valueOf(requestDto.getRoomType().toUpperCase()));
                 room.setCategory(RoomCategory.valueOf(requestDto.getCategory().toUpperCase()));
             } catch (Exception e) {
-                log.error("Invalid room type or category : " + e);
+                log.error("Invalid room type or category: {}", e.getMessage());
+                room.setRoomType(RoomType.PUBLIC);
+                room.setCategory(RoomCategory.FUN);
             }
-            // Step 6: Database में room save करना
+
+            // ✅ Agora channel name generate karo — save karo room mein
+            String channelName = agoraTokenService.generateChannelName(System.currentTimeMillis());
+            room.setAgoraChannelName(channelName);
+
             ChatRoom savedRoom = chatRoomRepository.save(room);
             log.info("✅ Room saved with ID: {}", savedRoom.getRoomId());
-
-            RoomType roomType = savedRoom.getRoomType();
+            // ✅ Host ke liye token generate karo
+            String agoraToken = agoraTokenService.generateToken(channelName, hostUser.getUserId());
 
             CreateRoomResponseDto rs = new CreateRoomResponseDto();
             rs.setRoomId(savedRoom.getRoomId());
             rs.setRoomImage(savedRoom.getRoomImage());
             rs.setRoomName(savedRoom.getRoomName());
-            rs.setRoomType(roomType.name());
+            rs.setRoomType(savedRoom.getRoomType().name());
             rs.setDescription(savedRoom.getDescription());
             rs.setHostId(savedRoom.getHostId());
             rs.setHostName(savedRoom.getHostName());
             rs.setHostImage(hostUser.getImage());
+            rs.setMaxParticipants(savedRoom.getMaxParticipants());
+            rs.setCurrentParticipants(savedRoom.getCurrentParticipants());
+            rs.setChannelName(channelName); // ✅ Frontend ko chahiye
+            rs.setAgoraToken(agoraToken); // ✅ Frontend ko chahiye
+            rs.setAgoraAppId(agoraConfig.getAppId()); // ✅ Frontend ko chahiye
 
-            log.info("🎊 Room creation completed successfully for room ID: {}", savedRoom.getRoomId());
             return rs;
 
         } catch (Exception e) {
-            log.error("Create Room Exception : " + e);
+            log.error("Create Room Exception: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create room: " + e.getMessage());
         }
-        return null;
     }
 
     @Override
     public JoinRoomResponseDto joinRoom(JoinRoomRequestDto requestDto) {
         try {
-            log.info("🚪 User {} attempting to join room {}",
-                    requestDto.getUserId(), requestDto.getRoomId());
-
-            // Step 1: Room और user validation
             ChatRoom room = chatRoomRepository.findById(requestDto.getRoomId())
-                    .orElseThrow(() -> new RuntimeException("Room not found with ID: " + requestDto.getRoomId()));
+                    .orElseThrow(() -> new RuntimeException("Room not found"));
 
             User user = userRepository.findById(requestDto.getUserId())
-                    .orElseThrow(() -> new RuntimeException("User not found with ID: " + requestDto.getUserId()));
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // Step 2: Room joinability checks
-            // validateRoomJoinability(room, user, requestDto);
+            // ✅ Already joined check
+            Optional<RoomParticipant> existingParticipant = participantRepository
+                    .findTopByRoomRoomIdAndUserUserIdAndStatus(
+                            requestDto.getRoomId(),
+                            requestDto.getUserId(),
+                            ParticipantStatus.ACTIVE);
 
-            // Step 3: User's previous participation check
-            // Optional<RoomParticipant> existingParticipant =
-            // participantRepository.findByRoomAndUser(room, user);
+            if (existingParticipant.isPresent()) {
+                RoomParticipant ep = existingParticipant.get();
+                // ✅ New token generate karo rejoining ke liye
+                String newToken = agoraTokenService.generateToken(
+                        room.getAgoraChannelName(), user.getUserId());
+                return buildJoinResponse(room, ep, newToken);
+            }
 
-            // Check for existing active participation
-            // if (existingParticipant.isPresent() &&
-            // existingParticipant.get().getStatus() == ParticipantStatus.ACTIVE) {
-            // throw new VoiceChatException("User is already in this room");
-            // }
+            // ✅ Available seat number find karo
+            Integer seatNumber = getAvailableSeatNumber(room.getRoomId(), room.getMaxParticipants());
 
-            // Check for bans या kicks
-            // if (existingParticipant.isPresent()) {
-            // ParticipantStatus lastStatus = existingParticipant.get().getStatus();
-            // if (lastStatus == ParticipantStatus.BANNED) {
-            // throw new VoiceChatException("User is banned from this room");
-            // } else if (lastStatus == ParticipantStatus.KICKED &&
-            // existingParticipant.get().getLeftAt().isAfter(LocalDateTime.now().minusHours(1)))
-            // {
-            // throw new VoiceChatException("User was recently kicked. Please wait before
-            // rejoining.");
-            // }
-            // }
-
-            // // Step 4: Create या update participant record
-            // RoomParticipant participant = existingParticipant.orElse(new
-            // RoomParticipant());
             RoomParticipant participant = new RoomParticipant();
-
-            // Participant details set करना
             participant.setRoom(room);
             participant.setUser(user);
-            participant.setRole(ParticipantRole.LISTENER); // Default role
+            participant.setRole(ParticipantRole.LISTENER);
             participant.setStatus(ParticipantStatus.ACTIVE);
             participant.setJoinedAt(LocalDateTime.now());
             participant.setLastActiveAt(LocalDateTime.now());
-            // participant.setLeftAt(null); // Clear previous left time
-
-            // Agora integration setup
             participant.setAgoraUid(String.valueOf(user.getUserId()));
-            // participant.setAgoraRole("audience"); // Default audience role
             participant.setIsAudioEnabled(true);
-            // participant.setCanSpeak(false); // Initially in audience
-            // participant.setCanChat(true);
-            // participant.setCanSendPrivateMessage(true);
+            participant.setIsMuted(false);
+            participant.setSeatNumber(seatNumber); // ✅ Seat assign karo
 
-            // Behavior score reset (if rejoining)
-            // if (existingParticipant.isPresent()) {
-            // participant.setBehaviorScore(Math.max(participant.getBehaviorScore(), 50));
-            // // Minimum 50 on rejoin
-            // }
-
-            // Step 5: Save participant
             RoomParticipant savedParticipant = participantRepository.save(participant);
 
-            // Step 6: Update room participant count
-            // room.incrementParticipantCount();
+            // ✅ Participant count increment
+            room.setCurrentParticipants(room.getCurrentParticipants() + 1);
             ChatRoom updatedRoom = chatRoomRepository.save(room);
 
-            // Step 7: Generate user-specific Agora token
-            // String userToken = generateAgoraTokenForUser(room.getAgoraChannelName(),
-            // user.getUserId(), "subscriber");
+            // ✅ User ke liye Agora token
+            String agoraToken = agoraTokenService.generateToken(
+                    updatedRoom.getAgoraChannelName(),
+                    user.getUserId());
 
-            // Step 8: Send welcome messages
-            // sendSystemMessage(room, "👋 " + user.getFullName() + " कमरे में आ गए हैं!");
-            // sendWelcomeMessage(room, user);
-
-            // Step 9: Real-time notifications
-            // broadcastParticipantJoined(room, savedParticipant);
-
-            // Step 10: Prepare response data
-
-            // Get other participants list
-            // List<RoomParticipant> otherParticipants = participantRepository
-            // .findByRoomAndStatus(room, ParticipantStatus.ACTIVE)
-            // .stream()
-            // .filter(p -> !p.getUser().getUserId().equals(user.getUserId()))
-            // .collect(Collectors.toList());
-
-            // List<ParticipantSummaryDto> participantSummaries = otherParticipants.stream()
-            // .map(this::convertToParticipantSummary)
-            // .collect(Collectors.toList());
-
-            // // Get recent messages
-            // List<ChatMessage> recentMessages = messageRepository
-            // .findRecentRoomMessages(room.getRoomId(), PageRequest.of(0, 10));
-
-            // List<MessageSummaryDto> messageSummaries = recentMessages.stream()
-            // .map(this::convertToMessageSummary)
-            // .collect(Collectors.toList());
-
-            // // Get room rules
-            // List<String> roomRules = Arrays.asList(
-            // "सभी का सम्मान करें",
-            // "अभद्र भाषा का उपयोग न करें",
-            // "स्पैम न करें",
-            // "निजी जानकारी साझा न करें",
-            // "होस्ट के नियमों का पालन करें"
-            // );
-
-            // Step 11: Build comprehensive response
-            JoinRoomResponseDto response = JoinRoomResponseDto.builder()
-                    .roomId(updatedRoom.getRoomId())
-                    .roomName(updatedRoom.getRoomName())
-                    .description(updatedRoom.getDescription())
-                    .category(updatedRoom.getCategory().name())
-                    .roomType(updatedRoom.getRoomType().name())
-                    .channelName(updatedRoom.getAgoraChannelName())
-                    // .agoraToken(userToken)
-                    .tokenExpiryTime(LocalDateTime.now().plusHours(24))
-                    // .agoraAppId(updatedRoom.getAgoraAppId())
-                    .agoraUid(savedParticipant.getAgoraUid())
-                    .participantId(savedParticipant.getId())
-                    .role(savedParticipant.getRole().name())
-                    .status(savedParticipant.getStatus().name())
-                    .seatNumber(savedParticipant.getSeatNumber())
-                    // .canSpeak(savedParticipant.getCanSpeak())
-                    .isMuted(savedParticipant.getIsMuted())
-                    .currentParticipants(updatedRoom.getCurrentParticipants())
-                    .maxParticipants(updatedRoom.getMaxParticipants())
-                    // .isRoomFull(updatedRoom.isFull())
-                    .isRoomLocked(updatedRoom.getIsLocked())
-                    .hostId(updatedRoom.getHostId())
-                    .hostName(updatedRoom.getHostName())
-                    // .hostImage(getHostImage(updatedRoom.getHostId()))
-                    // .roomLanguage(updatedRoom.getRoomLanguage())
-                    .backgroundMusic(updatedRoom.getBackgroundMusic())
-                    // .welcomeMessage(updatedRoom.getWelcomeMessage())
-                    // // .otherParticipants(participantSummaries)
-                    // .recentMessages(messageSummaries)
-                    // .roomRules(roomRules)
-                    .message("Successfully joined the room! Welcome to " + updatedRoom.getRoomName())
-                    .success(true)
-                    .joinedAt(savedParticipant.getJoinedAt())
-                    .build();
-
-            log.info("✅ User {} successfully joined room {} as participant {}",
-                    user.getUserId(), room.getRoomId(), savedParticipant.getId());
-
-            return response;
+            return buildJoinResponse(updatedRoom, savedParticipant, agoraToken);
 
         } catch (Exception e) {
-            log.error("❌ Business error joining room: {}", e.getMessage());
+            log.error("❌ Join room error: {}", e.getMessage(), e);
             throw e;
-
         }
-
     }
 
     @Override
@@ -287,71 +179,45 @@ public class VoiceChatServiceImpl implements VoiceChatService {
             log.info("🚪 User {} leaving room {}",
                     requestDto.getUserId(), requestDto.getRoomId());
 
-            // Step 1: Validate room और participant
             ChatRoom room = chatRoomRepository.findById(requestDto.getRoomId())
                     .orElseThrow(() -> new RuntimeException("Room not found"));
 
             User user = userRepository.findById(requestDto.getUserId())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            RoomParticipant participant = new RoomParticipant();
-            // = participantRepository
-            //         .findByRoomRooIdAndUserUserId(requestDto.getRoomId(), requestDto.getUserId())
-            //         .orElseThrow(() -> new RuntimeException("User is not in this room"));
+            // ✅ DB se active participant fetch karo
+            Optional<RoomParticipant> participantOpt = participantRepository
+                    .findTopByRoomRoomIdAndUserUserIdAndStatus(
+                            requestDto.getRoomId(),
+                            requestDto.getUserId(),
+                            ParticipantStatus.ACTIVE);
 
-            // if (participant.getStatus() != ParticipantStatus.ACTIVE) {
-            // throw new VoiceChatException("User is not actively in this room");
-            // }
-
-            // Step 2: Calculate session statistics
-            LocalDateTime joinedAt = participant.getJoinedAt();
+            LocalDateTime joinedAt = LocalDateTime.now();
             LocalDateTime leftAt = LocalDateTime.now();
-            long sessionDurationSeconds = java.time.Duration.between(joinedAt, leftAt).getSeconds();
+            long sessionDurationSeconds = 0;
 
-            // Update participant record
-            participant.setStatus(ParticipantStatus.LEFT);
-            // participant.setLeftAt(leftAt);
-            participant.setLastActiveAt(leftAt);
-            // participant.setTotalTimeSpent(sessionDurationSeconds);
+            if (participantOpt.isPresent()) {
+                RoomParticipant participant = participantOpt.get();
+                joinedAt = participant.getJoinedAt() != null ? participant.getJoinedAt() : LocalDateTime.now();
+                leftAt = LocalDateTime.now();
+                sessionDurationSeconds = java.time.Duration.between(joinedAt, leftAt).getSeconds();
 
-            // Clear seat if user was on mic
-            // if (participant.getSeatNumber() != null) {
-            // participant.moveToAudience(); // Clear seat and reset permissions
-            // }
+                // ✅ Status update karo
+                participant.setStatus(ParticipantStatus.LEFT);
+                participant.setLastActiveAt(leftAt);
+                participantRepository.save(participant);
 
-            participantRepository.save(participant);
+                // ✅ Participant count decrement karo
+                int current = room.getCurrentParticipants();
+                room.setCurrentParticipants(Math.max(0, current - 1)); // ✅ 0 se neeche nahi
+                chatRoomRepository.save(room);
 
-            // Step 3: Update room participant count
-            // room.decrementParticipantCount();
+                log.info("✅ Participant record updated for user {}", requestDto.getUserId());
+            } else {
+                log.warn("⚠️ Active participant not found for user {} in room {}",
+                        requestDto.getUserId(), requestDto.getRoomId());
+            }
 
-            // Step 4: Handle special cases
-            String newHostName = null;
-            boolean roomStillActive = true;
-
-            // if (participant.getRole() == ParticipantRole.HOST) {
-            // // Host is leaving - need to transfer ownership या close room
-            // roomStillActive = handleHostLeaving(room, participant);
-            // if (roomStillActive) {
-            // // Get new host name for response
-            // newHostName = chatRoomRepository.findById(room.getRoomId())
-            // .map(ChatRoom::getHostName)
-            // .orElse("System");
-            // }
-            // } else {
-            // chatRoomRepository.save(room); // Just update participant count
-            // }
-
-            // Step 5: Send farewell message
-            // sendSystemMessage(room, "👋 " + user.getFullName() + " ने कमरा छोड़ दिया
-            // है।");
-
-            // Step 6: Broadcast participant update
-            // broadcastParticipantLeft(room, participant);
-
-            // Step 7: Get recommendations for user
-            // List<RoomSummaryDto> recommendedRooms = getRecommendedRoomsForUser(user);
-
-            // Step 8: Build response
             LeaveRoomResponseDto response = LeaveRoomResponseDto.builder()
                     .roomId(room.getRoomId())
                     .userId(user.getUserId())
@@ -359,81 +225,181 @@ public class VoiceChatServiceImpl implements VoiceChatService {
                     .joinedAt(joinedAt)
                     .leftAt(leftAt)
                     .sessionDurationSeconds(sessionDurationSeconds)
-                    // .messagesPosted(participant.getMessageCount())
-                    // .giftsReceived(participant.getGiftsReceived())
-                    // .giftsGiven(participant.getGiftsGiven())
                     .leaveReason(requestDto.getLeaveReason() != null ? requestDto.getLeaveReason() : "VOLUNTARY")
                     .wasKicked(false)
                     .wasBanned(false)
                     .remainingParticipants(room.getCurrentParticipants())
-                    .roomStillActive(roomStillActive)
-                    .newHostName(newHostName)
-                    .sessionRating(requestDto.getSessionRating())
-                    .sessionFeedback(requestDto.getSessionFeedback())
-                    // .recommendedRooms(recommendedRooms)
-                    .message("You have left the room successfully. Thank you for participating!")
+                    .roomStillActive(room.getIsActive())
+                    .message("You have left the room successfully!")
                     .success(true)
                     .build();
 
-            log.info("✅ User {} successfully left room {}", user.getUserId(), room.getRoomId());
+            log.info("✅ User {} left room {}", user.getUserId(), room.getRoomId());
             return response;
 
         } catch (Exception e) {
-            log.error("💥 Unexpected error leaving room: {}", e.getMessage(), e);
-            return null;
+            log.error("💥 Leave room error: {}", e.getMessage(), e);
+            return LeaveRoomResponseDto.builder()
+                    .success(false)
+                    .message("Error leaving room: " + e.getMessage())
+                    .build();
         }
-
     }
 
     @Override
     public GetRoomListResponseDto getRoomList(GetRoomListRequestDto requestDto) {
-        log.info("get list of rooms request :" + requestDto);
+        log.info("get list of rooms request: {}", requestDto);
         try {
             Pageable pageable = PageRequest.of(requestDto.getPage(), requestDto.getSize());
             List<ChatRoom> listRooms = this.chatRoomRepository.findAll(pageable).getContent();
 
-            GetRoomListResponseDto getRoomListResponseDto = new GetRoomListResponseDto();
-
-            List<RoomSummaryDto> listRoomsResponse = new LinkedList<>();
-            listRoomsResponse =listRooms.stream()
+            List<RoomSummaryDto> listRoomsResponse = listRooms.stream()
                     .map(e -> {
-                        RoomSummaryDto roomSummaryDto = new RoomSummaryDto();
-                        roomSummaryDto.setHostName(e.getHostName());
-                        roomSummaryDto.setRoomId(e.getRoomId());
-                        roomSummaryDto.setRoomImage(e.getRoomImage());
-                        roomSummaryDto.setDescription(e.getDescription());
-                        roomSummaryDto.setCategory(null);
-                        return roomSummaryDto;
+                        RoomSummaryDto dto = new RoomSummaryDto();
+                        dto.setRoomId(e.getRoomId());
+                        dto.setRoomName(e.getRoomName());
+                        dto.setRoomImage(e.getRoomImage() != null ? e.getRoomImage() : "");
+                        dto.setDescription(e.getDescription());
+                        dto.setHostName(e.getHostName());
+                        dto.setHostId(e.getHostId());
+                        dto.setCategory(!ObjectUtils.isEmpty(e.getCategory()) ? e.getCategory().name() : "");
+                        dto.setRoomType(!ObjectUtils.isEmpty(e.getRoomType()) ? e.getRoomType().name() : "");
+                        dto.setCurrentParticipants(e.getCurrentParticipants());
+                        dto.setMaxParticipants(e.getMaxParticipants());
+                        dto.setIsActive(e.getIsActive());
+                        dto.setIsLocked(e.getIsLocked());
+                        dto.setCanJoin(Boolean.TRUE.equals(e.getIsActive()) && !Boolean.TRUE.equals(e.getIsLocked()));
+                        // dto.setCreatedAt(e.getCreatedAt());
+                        return dto;
                     }).collect(Collectors.toList());
 
-            getRoomListResponseDto.setRooms(listRoomsResponse);
+            GetRoomListResponseDto responseDto = new GetRoomListResponseDto();
+            responseDto.setRooms(listRoomsResponse);
+            responseDto.setCurrentPage(requestDto.getPage());
+            responseDto.setPageSize(requestDto.getSize());
+            responseDto.setTotalElements((long) listRoomsResponse.size());
 
-            return getRoomListResponseDto;
+            return responseDto;
         } catch (Exception e) {
+            log.error("getRoomList error: {}", e.getMessage(), e);
             throw e;
         }
     }
 
     @Override
     public GetRoomDetailsResponseDto getRoomDetails(GetRoomDetailsRequestDto requestDto) {
-        log.info("Get room details request :" + requestDto);
+        log.info("Get room details request: {}", requestDto);
         try {
+            ChatRoom room = chatRoomRepository.findById(requestDto.getRoomId())
+                    .orElseThrow(() -> new RuntimeException("Room not found: " + requestDto.getRoomId()));
 
-            Optional<ChatRoom> getRoom = chatRoomRepository.findById(requestDto.getRoomId());
-            ChatRoom room = getRoom.get();
+            User hostUser = userRepository.findById(room.getHostId())
+                    .orElseThrow(() -> new RuntimeException("Host not found: " + room.getHostId()));
+
             GetRoomDetailsResponseDto responseDto = new GetRoomDetailsResponseDto();
-            if (getRoom.isPresent()) {
-                responseDto.setRoomId(room.getRoomId());
-                responseDto.setRoomName(room.getRoomName());
-                responseDto.setRoomImage(room.getRoomImage());
-                responseDto.setDescription(room.getDescription());
+            responseDto.setRoomId(room.getRoomId());
+            responseDto.setRoomName(room.getRoomName());
+            responseDto.setRoomImage(room.getRoomImage() != null ? room.getRoomImage() : "");
+            responseDto.setDescription(room.getDescription());
+            responseDto.setRoomType(room.getRoomType() != null ? room.getRoomType().name() : null);
+            responseDto.setCategory(room.getCategory() != null ? room.getCategory().name() : null);
+            responseDto.setBackgroundMusic(room.getBackgroundMusic());
+            responseDto.setHostImage(hostUser.getImage() != null ? hostUser.getImage() : "");
+            responseDto.setMaxParticipants(room.getMaxParticipants());
+            responseDto.setCurrentParticipants(room.getCurrentParticipants());
+            responseDto.setIsActive(room.getIsActive());
+            responseDto.setIsLocked(room.getIsLocked());
+            responseDto.setAgoraChannelName(room.getAgoraChannelName());
+            responseDto.setCreatedAt(room.getCreatedAt());
+            responseDto.setMessage("Room details fetched successfully");
+            responseDto.setSuccess(true);
 
-            }
             return responseDto;
 
         } catch (Exception e) {
+            log.error("❌ getRoomDetails error: {}", e.getMessage(), e);
             throw e;
         }
+    }
+
+    @Override
+    public List<ParticipantResponseDto> getRoomParticipants(Long roomId) {
+        try {
+            List<RoomParticipant> activeParticipants = participantRepository
+                    .findByRoomRoomIdAndStatus(roomId, ParticipantStatus.ACTIVE);
+
+            return activeParticipants.stream().map(p -> {
+                ParticipantResponseDto dto = new ParticipantResponseDto();
+                dto.setParticipantId(p.getId());
+                dto.setUserId(p.getUser().getUserId());
+                dto.setFullName(p.getUser().getFullName());
+                dto.setUserImage(p.getUser().getImage());
+                dto.setRole(p.getRole().name());
+                dto.setStatus(p.getStatus().name());
+                dto.setSeatNumber(p.getSeatNumber());
+                dto.setIsMuted(p.getIsMuted());
+                dto.setIsAudioEnabled(p.getIsAudioEnabled());
+                dto.setAgoraUid(p.getAgoraUid());
+                return dto;
+            }).collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("getRoomParticipants error: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    // ✅ Helper method — response banao
+    private JoinRoomResponseDto buildJoinResponse(ChatRoom room,
+            RoomParticipant participant, String agoraToken) {
+        return JoinRoomResponseDto.builder()
+                .roomId(room.getRoomId())
+                .roomName(room.getRoomName())
+                .description(room.getDescription())
+                .category(room.getCategory() != null ? room.getCategory().name() : "")
+                .roomType(room.getRoomType() != null ? room.getRoomType().name() : "")
+                .channelName(room.getAgoraChannelName()) // ✅
+                .agoraToken(agoraToken) // ✅
+                .agoraAppId(agoraConfig.getAppId()) // ✅
+                .tokenExpiryTime(LocalDateTime.now().plusHours(24))
+                .agoraUid(participant.getAgoraUid())
+                .participantId(participant.getId())
+                .role(participant.getRole().name())
+                .status(participant.getStatus().name())
+                .seatNumber(participant.getSeatNumber())
+                .isMuted(participant.getIsMuted())
+                .currentParticipants(room.getCurrentParticipants())
+                .maxParticipants(room.getMaxParticipants())
+                .isRoomLocked(room.getIsLocked())
+                .hostId(room.getHostId())
+                .hostName(room.getHostName())
+                .backgroundMusic(room.getBackgroundMusic())
+                .message("Successfully joined! Welcome to " + room.getRoomName())
+                .success(true)
+                .joinedAt(participant.getJoinedAt())
+                .build();
+    }
+
+    // ✅ Available seat find karo
+    private Integer getAvailableSeatNumber(Long roomId, Integer maxSeats) {
+        // Occupied seats fetch karo
+        List<RoomParticipant> activeParticipants = participantRepository
+                .findByRoomRoomIdAndStatus(roomId, ParticipantStatus.ACTIVE);
+
+        Set<Integer> occupiedSeats = activeParticipants.stream()
+                .filter(p -> p.getSeatNumber() != null)
+                .map(RoomParticipant::getSeatNumber)
+                .collect(Collectors.toSet());
+
+        // ✅ 1 se maxSeats tak pehli available seat return karo
+        int max = maxSeats != null ? maxSeats : 12;
+        for (int i = 1; i <= max; i++) {
+            if (!occupiedSeats.contains(i)) {
+                return i;
+            }
+        }
+
+        return null; // Room full
     }
 
 }
