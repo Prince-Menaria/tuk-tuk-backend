@@ -21,6 +21,7 @@ public class GetRoomDetailsResponseDto {
     private String roomLanguage;
     private String tags;
     private String hostImage;
+    private String hostName;
     
     // Visual elements
     private String roomImage;

@@ -18,7 +18,9 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voic
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.GetRoomDetailsRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.GetRoomListRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.JoinRoomRequestDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.JoinRoomSeatRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.LeaveRoomRequestDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.LeaveRoomSeatRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.CreateRoomResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.GetRoomDetailsResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.GetRoomListResponseDto;
@@ -290,6 +292,57 @@ public class VoiceChatController {
         } catch (Exception e) {
             log.error("Get participants error: {}", e.getMessage(), e);
             MobileResponse<List<ParticipantResponseDto>> error = new MobileResponse<>();
+            error.setStatus(false);
+            error.setMessage(e.getMessage());
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    // ✅ Seat join karo
+    @PostMapping("/rooms/join-seat")
+    public ResponseEntity<MobileResponse<ParticipantResponseDto>> joinSeat(
+            @RequestParam Long roomId,
+            @RequestParam Long userId,
+            @RequestParam Integer seatNumber) {
+        try {
+            JoinRoomSeatRequestDto requestDto = new JoinRoomSeatRequestDto();
+            requestDto.setRoomId(roomId);
+            requestDto.setUserId(userId);
+            requestDto.setSeatNumber(seatNumber);
+            ParticipantResponseDto response = voiceChatService.joinSeat(requestDto);
+            MobileResponse<ParticipantResponseDto> mobileResponse = new MobileResponse<>();
+            mobileResponse.setData(response);
+            mobileResponse.setMessage("Seat joined successfully");
+            mobileResponse.setStatus(true);
+            return ResponseEntity.ok(mobileResponse);
+        } catch (Exception e) {
+            log.error("Join seat error: {}", e.getMessage(), e);
+            MobileResponse<ParticipantResponseDto> error = new MobileResponse<>();
+            error.setStatus(false);
+            error.setMessage(e.getMessage());
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    // ✅ Seat leave karo
+    @PostMapping("/rooms/leave-seat")
+    public ResponseEntity<MobileResponse<String>> leaveSeat(
+            @RequestParam Long roomId,
+            @RequestParam Long userId) {
+        try {
+            LeaveRoomSeatRequestDto requestDto = new LeaveRoomSeatRequestDto();
+            requestDto.setRoomId(roomId);
+            requestDto.setUserId(userId);
+
+            voiceChatService.leaveSeat(requestDto);
+            MobileResponse<String> mobileResponse = new MobileResponse<>();
+            mobileResponse.setData("Seat left");
+            mobileResponse.setMessage("Seat left successfully");
+            mobileResponse.setStatus(true);
+            return ResponseEntity.ok(mobileResponse);
+        } catch (Exception e) {
+            log.error("Leave seat error: {}", e.getMessage(), e);
+            MobileResponse<String> error = new MobileResponse<>();
             error.setStatus(false);
             error.setMessage(e.getMessage());
             return ResponseEntity.internalServerError().body(error);

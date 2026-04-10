@@ -92,6 +92,7 @@ public class SecurityConfig {
                     "/v3/api-docs/**",
                     "/ping",
                     "/",
+                    "/api/v1/auth/logout",
 
                     // ============ WebSocket endpoints (IMPORTANT!) ============
                     "/ws-chat/**",           // WebSocket endpoint

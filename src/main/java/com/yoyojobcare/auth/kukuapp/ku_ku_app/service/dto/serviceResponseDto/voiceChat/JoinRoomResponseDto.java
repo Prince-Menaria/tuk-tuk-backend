@@ -17,6 +17,7 @@ public class JoinRoomResponseDto {
     // Room information
     private Long roomId;
     private String roomName;
+    private String roomImage;
     private String description;
     private String category;
     private String roomType;

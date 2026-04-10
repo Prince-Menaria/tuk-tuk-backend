@@ -30,7 +30,9 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voic
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.GetRoomDetailsRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.GetRoomListRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.JoinRoomRequestDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.JoinRoomSeatRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.LeaveRoomRequestDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.LeaveRoomSeatRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.CreateRoomResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.GetRoomDetailsResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.GetRoomListResponseDto;
@@ -38,6 +40,7 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voi
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.LeaveRoomResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.ParticipantResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.RoomSummaryDto;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -305,6 +308,7 @@ public class VoiceChatServiceImpl implements VoiceChatService {
             responseDto.setCategory(room.getCategory() != null ? room.getCategory().name() : null);
             responseDto.setBackgroundMusic(room.getBackgroundMusic());
             responseDto.setHostImage(hostUser.getImage() != null ? hostUser.getImage() : "");
+            responseDto.setHostName(hostUser.getFullName() != null ? hostUser.getFullName() : "");
             responseDto.setMaxParticipants(room.getMaxParticipants());
             responseDto.setCurrentParticipants(room.getCurrentParticipants());
             responseDto.setIsActive(room.getIsActive());
@@ -323,6 +327,7 @@ public class VoiceChatServiceImpl implements VoiceChatService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ParticipantResponseDto> getRoomParticipants(Long roomId) {
         try {
             List<RoomParticipant> activeParticipants = participantRepository
@@ -348,6 +353,81 @@ public class VoiceChatServiceImpl implements VoiceChatService {
             throw e;
         }
     }
+
+    @Override
+    @Transactional
+    public ParticipantResponseDto joinSeat(JoinRoomSeatRequestDto requestDto) {
+        try {
+            // ✅ Seat already occupied check
+            List<RoomParticipant> activeParticipants = participantRepository
+                    .findByRoomRoomIdAndStatus(requestDto.getRoomId(), ParticipantStatus.ACTIVE);
+
+            boolean seatOccupied = activeParticipants.stream()
+                    .anyMatch(p -> requestDto.getSeatNumber().equals(p.getSeatNumber())
+                            && !p.getUser().getUserId().equals(requestDto.getUserId()));
+
+            if (seatOccupied) {
+                throw new RuntimeException("Seat " + requestDto.getSeatNumber() + " is already occupied");
+            }
+
+            // ✅ User ka participant record fetch karo
+            RoomParticipant participant = participantRepository
+                    .findTopByRoomRoomIdAndUserUserIdAndStatus(requestDto.getRoomId(), requestDto.getUserId(),
+                            ParticipantStatus.ACTIVE)
+                    .orElseThrow(() -> new RuntimeException("User not in room"));
+
+            // ✅ Seat assign + mic enable karo
+            participant.setSeatNumber(requestDto.getSeatNumber());
+            participant.setIsAudioEnabled(true);
+            participant.setIsMuted(false);
+            participant.setRole(ParticipantRole.SPEAKER);
+            participantRepository.save(participant);
+
+            ParticipantResponseDto dto = new ParticipantResponseDto();
+            dto.setParticipantId(participant.getId());
+            dto.setUserId(participant.getUser().getUserId());
+            dto.setFullName(participant.getUser().getFullName());
+            dto.setUserImage(participant.getUser().getImage());
+            dto.setRole(participant.getRole().name());
+            dto.setStatus(participant.getStatus().name());
+            dto.setSeatNumber(participant.getSeatNumber());
+            dto.setIsMuted(participant.getIsMuted());
+            dto.setIsAudioEnabled(participant.getIsAudioEnabled());
+            dto.setAgoraUid(participant.getAgoraUid());
+
+            log.info("✅ User {} joined seat {} in room {}", requestDto.getUserId(), requestDto.getSeatNumber(),
+                    requestDto.getRoomId());
+            return dto;
+
+        } catch (Exception e) {
+            log.error("joinSeat error: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    @Override
+    @Transactional
+    public void leaveSeat(LeaveRoomSeatRequestDto requestDto) {
+        try {
+            RoomParticipant participant = participantRepository
+                    .findTopByRoomRoomIdAndUserUserIdAndStatus(requestDto.getRoomId(), requestDto.getUserId(),
+                            ParticipantStatus.ACTIVE)
+                    .orElseThrow(() -> new RuntimeException("User not in room"));
+
+            // ✅ Seat clear + mic disable karo
+            participant.setSeatNumber(null);
+            participant.setIsAudioEnabled(false);
+            participant.setIsMuted(true);
+            participant.setRole(ParticipantRole.LISTENER);
+            participantRepository.save(participant);
+
+            log.info("✅ User {} left seat in room {}", requestDto.getUserId(), requestDto.getRoomId());
+        } catch (Exception e) {
+            log.error("leaveSeat error: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
 
     // ✅ Helper method — response banao
     private JoinRoomResponseDto buildJoinResponse(ChatRoom room,
@@ -377,6 +457,8 @@ public class VoiceChatServiceImpl implements VoiceChatService {
                 .message("Successfully joined! Welcome to " + room.getRoomName())
                 .success(true)
                 .joinedAt(participant.getJoinedAt())
+                .roomImage(room.getRoomImage())
+                .hostImage(participant.getUser().getImage())
                 .build();
     }
 

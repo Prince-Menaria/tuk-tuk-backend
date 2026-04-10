@@ -13,6 +13,7 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.utility.MobileResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,7 +48,7 @@ public class AuthController {
             userInfo.put("gender", user.getGender());
             userInfo.put("provider", user.getProvider());
             userInfo.put("roles", user.getRoles().stream()
-                .map(role -> role.getName()).toArray());
+                    .map(role -> role.getName()).toArray());
 
             MobileResponse<Map<String, Object>> response = new MobileResponse<>();
             response.setData(userInfo);
@@ -58,11 +59,11 @@ public class AuthController {
 
         } catch (Exception e) {
             log.error("❌ Get current user failed: {}", e.getMessage(), e);
-            
+
             MobileResponse<Map<String, Object>> response = new MobileResponse<>();
             response.setMessage("Failed to get user details: " + e.getMessage());
             response.setStatus(false);
-            
+
             return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
         }
     }
@@ -94,11 +95,11 @@ public class AuthController {
 
         } catch (Exception e) {
             log.error("❌ Token refresh failed: {}", e.getMessage(), e);
-            
+
             MobileResponse<Map<String, Object>> response = new MobileResponse<>();
             response.setMessage("Token refresh failed: " + e.getMessage());
             response.setStatus(false);
-            
+
             return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
         }
     }
@@ -109,10 +110,10 @@ public class AuthController {
             @RequestBody ValidateTokenRequest request) {
         try {
             boolean isValid = jwtTokenProvider.validateToken(request.token);
-            
+
             Map<String, Object> result = new HashMap<>();
             result.put("valid", isValid);
-            
+
             if (isValid) {
                 Long userId = jwtTokenProvider.getUserIdFromToken(request.token);
                 String email = jwtTokenProvider.getEmailFromToken(request.token);
@@ -129,11 +130,11 @@ public class AuthController {
 
         } catch (Exception e) {
             log.error("❌ Token validation failed: {}", e.getMessage(), e);
-            
+
             MobileResponse<Map<String, Object>> response = new MobileResponse<>();
             response.setMessage("Token validation failed: " + e.getMessage());
             response.setStatus(false);
-            
+
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
     }
@@ -150,10 +151,9 @@ public class AuthController {
             Map<String, Object> dashboardData = new HashMap<>();
             dashboardData.put("welcomeMessage", "Welcome to TukTuk Chat!");
             dashboardData.put("user", Map.of(
-                "name", user.getFullName(),
-                "email", user.getEmail(),
-                "picture", user.getImage()
-            ));
+                    "name", user.getFullName(),
+                    "email", user.getEmail(),
+                    "picture", user.getImage()));
 
             MobileResponse<Map<String, Object>> response = new MobileResponse<>();
             response.setData(dashboardData);
@@ -164,12 +164,46 @@ public class AuthController {
 
         } catch (Exception e) {
             log.error("❌ Dashboard access failed: {}", e.getMessage(), e);
-            
+
             MobileResponse<Map<String, Object>> response = new MobileResponse<>();
             response.setMessage("Dashboard access failed: " + e.getMessage());
             response.setStatus(false);
-            
+
             return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    // ✅ Logout API
+    @PostMapping("/logout")
+    public ResponseEntity<MobileResponse<String>> logout(
+            HttpServletRequest request) {
+
+        try {
+            String authHeader = request.getHeader("Authorization");
+            String token = null;
+
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                token = authHeader.substring(7);
+            }
+
+            log.info("✅ User logged out, token: {}...",
+                    token != null ? token.substring(0, Math.min(20, token.length())) : "null");
+
+            MobileResponse<String> response = new MobileResponse<>();
+            response.setStatus(true);
+            response.setMessage("Logged out successfully");
+            response.setData("Logout successful");
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("❌ Logout error: {}", e.getMessage(), e);
+
+            MobileResponse<String> response = new MobileResponse<>();
+            response.setStatus(false);
+            response.setMessage("Logout failed: " + e.getMessage());
+
+            return ResponseEntity.internalServerError().body(response);
         }
     }
 
