@@ -1,6 +1,7 @@
 package com.yoyojobcare.auth.kukuapp.ku_ku_app.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -254,7 +255,11 @@ public class VoiceChatServiceImpl implements VoiceChatService {
         log.info("get list of rooms request: {}", requestDto);
         try {
             Pageable pageable = PageRequest.of(requestDto.getPage(), requestDto.getSize());
-            List<ChatRoom> listRooms = this.chatRoomRepository.findAll(pageable).getContent();
+            List<ChatRoom> listRooms = this.chatRoomRepository.findAll(pageable)
+                                                              .getContent()
+                                                              .stream()
+                                                              .sorted(Comparator.comparing(ChatRoom :: getRoomId).reversed())
+                                                              .collect(Collectors.toList());
 
             List<RoomSummaryDto> listRoomsResponse = listRooms.stream()
                     .map(e -> {

@@ -178,7 +178,7 @@ public class VoiceChatController {
 
             @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
 
-            @Parameter(description = "Page size (max 50)") @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "Page size (max 50)") @RequestParam(defaultValue = "6") int size,
 
             @Parameter(description = "Filter by category") @RequestParam(required = false) String category,
 
