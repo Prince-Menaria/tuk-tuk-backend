@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -41,6 +42,9 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voi
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.LeaveRoomResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.ParticipantResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.RoomSummaryDto;
+
+import io.jsonwebtoken.lang.Collections;
+
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
@@ -255,11 +259,22 @@ public class VoiceChatServiceImpl implements VoiceChatService {
         log.info("get list of rooms request: {}", requestDto);
         try {
             Pageable pageable = PageRequest.of(requestDto.getPage(), requestDto.getSize());
-            List<ChatRoom> listRooms = this.chatRoomRepository.findAll(pageable)
-                                                              .getContent()
-                                                              .stream()
-                                                              .sorted(Comparator.comparing(ChatRoom :: getRoomId).reversed())
-                                                              .collect(Collectors.toList());
+            Page<ChatRoom> listRoomsPage = this.chatRoomRepository.findAll(pageable);
+
+            List<ChatRoom> listRooms = listRoomsPage.getContent()
+                                                    .stream()
+                                                    .sorted(Comparator.comparing(ChatRoom::getRoomId).reversed())
+                                                    .collect(Collectors.toList());
+
+            if (ObjectUtils.isEmpty(listRooms)) {
+                GetRoomListResponseDto responseDto = new GetRoomListResponseDto();
+                responseDto.setRooms(Collections.emptyList());
+                responseDto.setCurrentPage(requestDto.getPage());
+                responseDto.setPageSize(requestDto.getSize());
+                responseDto.setTotalElements(null);
+                return responseDto;
+
+            }
 
             List<RoomSummaryDto> listRoomsResponse = listRooms.stream()
                     .map(e -> {
@@ -286,6 +301,9 @@ public class VoiceChatServiceImpl implements VoiceChatService {
             responseDto.setCurrentPage(requestDto.getPage());
             responseDto.setPageSize(requestDto.getSize());
             responseDto.setTotalElements((long) listRoomsResponse.size());
+            responseDto.setHasNext(listRoomsPage.hasNext());
+            responseDto.setHasPrevious(listRoomsPage.hasPrevious());
+            responseDto.setTotalPages(listRoomsPage.getTotalPages());
 
             return responseDto;
         } catch (Exception e) {
@@ -432,7 +450,6 @@ public class VoiceChatServiceImpl implements VoiceChatService {
             throw e;
         }
     }
-
 
     // ✅ Helper method — response banao
     private JoinRoomResponseDto buildJoinResponse(ChatRoom room,

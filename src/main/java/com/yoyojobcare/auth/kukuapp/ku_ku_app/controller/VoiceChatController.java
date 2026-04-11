@@ -125,7 +125,7 @@ public class VoiceChatController {
 
             MobileResponse<JoinRoomResponseDto> errorResponse = new MobileResponse<>();
             errorResponse.setData(null);
-            errorResponse.setMessage("Room join successful");
+            errorResponse.setMessage("Error occurred while joining room ....");
             errorResponse.setStatus(false);
 
             return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
