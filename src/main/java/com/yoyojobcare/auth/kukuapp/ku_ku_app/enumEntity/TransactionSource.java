@@ -8,6 +8,8 @@ public enum TransactionSource {
     TASK_REWARD, 
     DAILY_LOGIN, 
     ADMIN_CREDIT, 
-    ADMIN_DEBIT
+    ADMIN_DEBIT,
+    GIFT_SENT,      // ✅ add
+    GIFT_RECEIVED   // ✅ add
 
 }

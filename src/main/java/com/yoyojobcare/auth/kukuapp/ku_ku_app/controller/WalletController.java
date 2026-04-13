@@ -2,7 +2,6 @@ package com.yoyojobcare.auth.kukuapp.ku_ku_app.controller;
 
 import java.util.List;
 
-import javax.swing.text.StyledEditorKit.BoldAction;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
