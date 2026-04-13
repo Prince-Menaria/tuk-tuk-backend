@@ -93,6 +93,7 @@ public class SecurityConfig {
                     "/ping",
                     "/",
                     "/api/v1/auth/logout",
+                    "/api/v1/gifts/add-gift",
 
                     // ============ WebSocket endpoints (IMPORTANT!) ============
                     "/ws-chat/**",           // WebSocket endpoint
@@ -113,6 +114,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/social/follow/**").authenticated()
                 .requestMatchers("/api/v1/wallet/**").authenticated()
                 .requestMatchers("/dashboard").authenticated()
+                .requestMatchers("/api/v1/gifts/**").authenticated()
                 
                 
                 .anyRequest().authenticated())
