@@ -2,7 +2,6 @@ package com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gi
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,13 +9,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SendGiftResponseDto {
-    
+@Builder
+public class ViewRoomGiftResponseDto {
+
     private Boolean success;
     private String message;
+    private Long giftTransactionId;
     private Long giftId;
     private String giftName;
     private String giftImage;
@@ -24,11 +24,11 @@ public class SendGiftResponseDto {
     private Long senderId;
     private String senderName;
     private String senderImage;
-    private List<Long> receiverIds;       // ✅ List
-    private List<String> receiverNames;   // ✅ List
+    private Long receiverId;
+    private String receiverName;
     private Integer quantity;
     private BigDecimal totalDiamondsCost;
     private BigDecimal senderRemainingDiamonds;
-    private BigDecimal diamondsReceivedPerUser; // ✅ Half diamonds
     private LocalDateTime sentAt;
+
 }

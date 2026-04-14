@@ -18,6 +18,7 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gif
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.SendGiftResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.ViewGiftResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.ViewReceivedAllGiftUserResponseDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.ViewRoomGiftResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.utility.MobileResponse;
 
 import lombok.RequiredArgsConstructor;
@@ -80,10 +81,10 @@ public class GiftController {
 
     // ✅ Room gift history
     @GetMapping("/room-history")
-    public ResponseEntity<MobileResponse<List<SendGiftResponseDto>>> getRoomGiftHistory(
+    public ResponseEntity<MobileResponse<List<ViewRoomGiftResponseDto>>> getRoomGiftHistory(
             @RequestParam Long roomId) {
-        List<SendGiftResponseDto> history = giftService.getRoomGiftHistory(roomId);
-        return ResponseEntity.ok(MobileResponse.<List<SendGiftResponseDto>>builder()
+        List<ViewRoomGiftResponseDto> history = giftService.getRoomGiftHistory(roomId);
+        return ResponseEntity.ok(MobileResponse.<List<ViewRoomGiftResponseDto>>builder()
                 .status(true).message("Gift history fetched successful..").data(history).build());
     }
 

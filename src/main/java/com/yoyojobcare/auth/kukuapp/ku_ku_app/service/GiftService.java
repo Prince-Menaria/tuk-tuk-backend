@@ -9,6 +9,7 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gif
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.SendGiftResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.ViewGiftResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.ViewReceivedAllGiftUserResponseDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.ViewRoomGiftResponseDto;
 
 public interface GiftService {
 
@@ -18,7 +19,7 @@ public interface GiftService {
 
     List<ViewGiftResponseDto> getGiftsByCategory(String category);
 
-    List<SendGiftResponseDto> getRoomGiftHistory(Long roomId);
+    List<ViewRoomGiftResponseDto> getRoomGiftHistory(Long roomId);
 
     AddGiftResponseDto addGift(AddGiftRequestDto serviceRequest);
 
