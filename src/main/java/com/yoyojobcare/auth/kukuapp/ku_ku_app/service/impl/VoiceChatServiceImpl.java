@@ -2,6 +2,7 @@ package com.yoyojobcare.auth.kukuapp.ku_ku_app.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -29,15 +30,19 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.repository.UserRepository;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.AgoraTokenService;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.VoiceChatService;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.CreateRoomRequestDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.EditRoomRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.GetRoomDetailsRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.GetRoomListRequestDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.GetSearchByHostIdRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.JoinRoomRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.JoinRoomSeatRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.LeaveRoomRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.LeaveRoomSeatRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.CreateRoomResponseDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.EditRoomResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.GetRoomDetailsResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.GetRoomListResponseDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.GetSearchByHostIdResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.JoinRoomResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.LeaveRoomResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.ParticipantResponseDto;
@@ -262,9 +267,9 @@ public class VoiceChatServiceImpl implements VoiceChatService {
             Page<ChatRoom> listRoomsPage = this.chatRoomRepository.findAll(pageable);
 
             List<ChatRoom> listRooms = listRoomsPage.getContent()
-                                                    .stream()
-                                                    .sorted(Comparator.comparing(ChatRoom::getRoomId).reversed())
-                                                    .collect(Collectors.toList());
+                    .stream()
+                    .sorted(Comparator.comparing(ChatRoom::getRoomId).reversed())
+                    .collect(Collectors.toList());
 
             if (ObjectUtils.isEmpty(listRooms)) {
                 GetRoomListResponseDto responseDto = new GetRoomListResponseDto();
@@ -447,6 +452,90 @@ public class VoiceChatServiceImpl implements VoiceChatService {
             log.info("✅ User {} left seat in room {}", requestDto.getUserId(), requestDto.getRoomId());
         } catch (Exception e) {
             log.error("leaveSeat error: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    @Override
+    public EditRoomResponseDto editRoom(EditRoomRequestDto requestDto) {
+        log.info("Request Edit room: {}", requestDto);
+        try {
+            ChatRoom room = chatRoomRepository.findById(requestDto.getRoomId())
+                    .orElseThrow(() -> new RuntimeException("Room not found: " + requestDto.getRoomId()));
+
+            // ✅ Sirf non-null fields update karo
+            if (requestDto.getRoomName() != null && !requestDto.getRoomName().isBlank())
+                room.setRoomName(requestDto.getRoomName());
+
+            if (requestDto.getDescription() != null)
+                room.setDescription(requestDto.getDescription());
+
+            if (requestDto.getRoomImage() != null)
+                room.setRoomImage(requestDto.getRoomImage());
+
+            if (requestDto.getBackgroundMusic() != null)
+                room.setBackgroundMusic(requestDto.getBackgroundMusic());
+
+            if (requestDto.getMaxParticipants() != null && requestDto.getMaxParticipants() > 0)
+                room.setMaxParticipants(requestDto.getMaxParticipants());
+
+            if (requestDto.getRoomType() != null) {
+                try {
+                    room.setRoomType(RoomType.valueOf(requestDto.getRoomType().toUpperCase()));
+                } catch (Exception e) {
+                    log.warn("Invalid roomType: {}", requestDto.getRoomType());
+                }
+            }
+
+            if (requestDto.getCategory() != null) {
+                try {
+                    room.setCategory(RoomCategory.valueOf(requestDto.getCategory().toUpperCase()));
+                } catch (Exception e) {
+                    log.warn("Invalid category: {}", requestDto.getCategory());
+                }
+            }
+
+            ChatRoom updatedRoom = chatRoomRepository.save(room);
+            log.info("✅ Room {} edited successfully", updatedRoom.getRoomId());
+
+            EditRoomResponseDto response = new EditRoomResponseDto();
+            response.setRoomId(updatedRoom.getRoomId());
+            response.setRoomName(updatedRoom.getRoomName());
+            response.setDescription(updatedRoom.getDescription());
+            response.setRoomImage(updatedRoom.getRoomImage());
+            response.setRoomType(updatedRoom.getRoomType() != null ? updatedRoom.getRoomType().name() : null);
+            response.setCategory(updatedRoom.getCategory() != null ? updatedRoom.getCategory().name() : null);
+            response.setMaxParticipants(updatedRoom.getMaxParticipants());
+            response.setBackgroundMusic(updatedRoom.getBackgroundMusic());
+            response.setSuccess(true);
+            response.setMessage("Room updated successfully");
+
+            return response;
+
+        } catch (Exception e) {
+            log.error("Error occur Edit room: {}", e);
+            throw e;
+        }
+    }
+
+    @Override
+    public List<GetSearchByHostIdResponseDto> searchByHostId(GetSearchByHostIdRequestDto requestDto) {
+        log.info("Request search By HostId .. {} ", requestDto.getHostId());
+        try {
+
+            List<ChatRoom> listRooms = this.chatRoomRepository.findByHostId(requestDto.getHostId());
+            List<GetSearchByHostIdResponseDto> listResponseDto = new LinkedList<>();
+            if (!listRooms.isEmpty()) {
+                listResponseDto = listRooms.stream().map(e -> {
+                    GetSearchByHostIdResponseDto roomResponseDto = new GetSearchByHostIdResponseDto();
+                    roomResponseDto.setRoomId(e.getRoomId());
+                    roomResponseDto.setRoomName(e.getRoomName());
+                    return roomResponseDto;
+                }).collect(Collectors.toList());
+            }
+            return listResponseDto;
+        } catch (Exception e) {
+            log.error("Error occur search By HostId: {}", e);
             throw e;
         }
     }

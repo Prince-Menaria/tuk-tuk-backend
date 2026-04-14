@@ -21,6 +21,7 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.View
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.AddRoleServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.AddUserServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.EditUserServiceResponseDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.ViewAllUsersServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.ViewByUserIdServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.utility.MobileResponse;
 
@@ -117,6 +118,19 @@ public class UserController {
         MobileResponse<AddRoleServiceResponseDto> response = new MobileResponse<>();
         response.setData(serviceResponse);
         response.setMessage("Roles save Successful..");
+        response.setStatus(Boolean.TRUE);
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/users-count-info")
+    public ResponseEntity<MobileResponse<ViewAllUsersServiceResponseDto>> getAllActiveUsersCounts() {
+
+        ViewAllUsersServiceResponseDto serviceResponseDto = this.userService.getAllActiveUsers();
+        
+        MobileResponse<ViewAllUsersServiceResponseDto> response = new MobileResponse<>();
+        response.setData(serviceResponseDto);
+        response.setMessage("Fetch users counts Successful..");
         response.setStatus(Boolean.TRUE);
 
         return new ResponseEntity<>(response, HttpStatus.OK);

@@ -28,6 +28,7 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.Add
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.AddUserServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.DeleteUserByUserIdServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.EditUserServiceResponseDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.ViewAllUsersServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.ViewByUserIdServiceResponseDto;
 
 import lombok.RequiredArgsConstructor;
@@ -309,6 +310,23 @@ class UserServiceImpl implements UserService {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ViewAllUsersServiceResponseDto getAllActiveUsers() {
+        try {
+            Long userCounts = 0L;
+            int size = this.userRepository.findAll().size();
+            userCounts = Long.valueOf(size);
+            ViewAllUsersServiceResponseDto rs = new ViewAllUsersServiceResponseDto();
+            rs.setUserCounts(userCounts);
+            return rs;
+
+        } catch (Exception e) {
+            log.error("Error occur view list active users", e);
+            throw e;
         }
     }
 

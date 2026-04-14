@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -15,15 +16,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.VoiceChatService;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.CreateRoomRequestDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.EditRoomRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.GetRoomDetailsRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.GetRoomListRequestDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.GetSearchByHostIdRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.JoinRoomRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.JoinRoomSeatRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.LeaveRoomRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.voiceChat.LeaveRoomSeatRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.CreateRoomResponseDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.EditRoomResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.GetRoomDetailsResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.GetRoomListResponseDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.GetSearchByHostIdResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.JoinRoomResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.LeaveRoomResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.voiceChat.ParticipantResponseDto;
@@ -346,6 +351,48 @@ public class VoiceChatController {
             error.setStatus(false);
             error.setMessage(e.getMessage());
             return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    @PutMapping("/rooms/edit")
+    public ResponseEntity<MobileResponse<EditRoomResponseDto>> editRoom(
+            @RequestBody EditRoomRequestDto request) {
+        try {
+            log.info("Request edit room : {} ", request);
+            EditRoomResponseDto response = this.voiceChatService.editRoom(request);
+            MobileResponse<EditRoomResponseDto> mobileResponse = new MobileResponse<>();
+            mobileResponse.setData(response);
+            mobileResponse.setMessage("Room edited successfully");
+            mobileResponse.setStatus(true);
+            return ResponseEntity.ok(mobileResponse);
+        } catch (Exception e) {
+            log.error("Edit room error: {}", e.getMessage(), e);
+            MobileResponse<EditRoomResponseDto> error = new MobileResponse<>();
+            error.setStatus(false);
+            error.setMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    @GetMapping("/rooms/view-rooms-by-host-id")
+    public ResponseEntity<MobileResponse<List<GetSearchByHostIdResponseDto>>> searchByHostId(
+            @RequestParam Long hostId) {
+        try {
+            GetSearchByHostIdRequestDto requestDto = new GetSearchByHostIdRequestDto();
+            requestDto.setHostId(hostId);
+            log.info("Request edit room : {} ", requestDto);
+            List<GetSearchByHostIdResponseDto> listServiceResponseDto = this.voiceChatService.searchByHostId(requestDto);
+            MobileResponse<List<GetSearchByHostIdResponseDto>> mobileResponse = new MobileResponse<>();
+            mobileResponse.setData(listServiceResponseDto);
+            mobileResponse.setMessage("Fetch search By HostId successfully");
+            mobileResponse.setStatus(true);
+            return ResponseEntity.ok(mobileResponse);
+        } catch (Exception e) {
+            log.error("Edit rooms Fetch search By HostId error: {}", e.getMessage(), e);
+            MobileResponse<List<GetSearchByHostIdResponseDto>> error = new MobileResponse<>();
+            error.setStatus(false);
+            error.setMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(error);
         }
     }
 

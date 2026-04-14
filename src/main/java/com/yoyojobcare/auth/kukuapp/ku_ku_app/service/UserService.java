@@ -9,6 +9,7 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.Add
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.AddUserServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.DeleteUserByUserIdServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.EditUserServiceResponseDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.ViewAllUsersServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.ViewByUserIdServiceResponseDto;
 
 public interface UserService {
@@ -22,6 +23,8 @@ public interface UserService {
     public DeleteUserByUserIdServiceResponseDto deleteUserByUserId(DeleteUserByUserIdServiceRequestDto serviceRequestDto); 
 
     public AddRoleServiceResponseDto setRolesByUserIdAndRoleId(Long roleId, String roleName);
+
+    public ViewAllUsersServiceResponseDto getAllActiveUsers();
 
     
 
