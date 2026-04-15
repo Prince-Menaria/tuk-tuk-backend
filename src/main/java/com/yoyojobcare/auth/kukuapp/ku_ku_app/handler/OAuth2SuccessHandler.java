@@ -39,7 +39,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private final ObjectMapper objectMapper;
     private final IdGenerator idGenerator; // ← inject करो
 
-    @Value("${app.frontend.url:}")
+    @Value("${web.socket.set.allowed.origin.patterns}")
     private String frontendUrl;
 
     @Override
@@ -82,8 +82,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 sendJsonResponse(response, tokenResponse);
             } else {
                 // Web browser के लिए सीधे redirect ← ONLY यही करें
-                // String redirectUrl = "http://localhost:3000/oauth/callback"
-                String redirectUrl = "https://tuk-tuk-re.vercel.app/oauth/callback"
+                String redirectUrl = frontendUrl+"/oauth/callback"
+                // String redirectUrl = "https://tuk-tuk-re.vercel.app/oauth/callback"
                         + "?accessToken=" + accessToken
                         + "&refreshToken=" + refreshToken
                         + "&userId=" + user.getUserId()
