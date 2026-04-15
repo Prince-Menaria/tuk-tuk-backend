@@ -345,7 +345,7 @@ class UserServiceImpl implements UserService {
             List<User> listUsers = this.userRepository.findAll()
                     .stream()
                     .filter(e -> Boolean.TRUE.equals(e.isEnable()))
-                    .limit(10)
+                    // .limit(10)
                     .collect(Collectors.toList());
 
             Map<Long, UserFollow> userFollowMap = this.followRepository
