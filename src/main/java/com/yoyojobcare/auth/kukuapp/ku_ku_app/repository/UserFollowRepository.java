@@ -56,4 +56,6 @@ public interface UserFollowRepository extends JpaRepository<UserFollow, Long> {
     // Get all following with any status
     List<UserFollow> findByFollowerUserIdOrderByFollowedAtDesc(Long userId);
 
+    List<UserFollow> findByFollowerUserIdAndFollowStatus(Long followerId, FollowStatus followStatus);
+
 }

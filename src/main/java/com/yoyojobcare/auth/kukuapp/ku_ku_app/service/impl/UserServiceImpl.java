@@ -2,20 +2,25 @@ package com.yoyojobcare.auth.kukuapp.ku_ku_app.service.impl;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
 
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.entity.Role;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.entity.User;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.entity.UserAnswers;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.entity.UserFollow;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.entity.UserInterest;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.enumEntity.FollowStatus;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.repository.RoleRepository;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.repository.UserAnswersRepository;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.repository.UserFollowRepository;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.repository.UserInterestRepository;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.repository.UserRepository;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.IdGenerator;
@@ -23,11 +28,13 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.UserService;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.AddUserServiceRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.DeleteUserByUserIdServiceRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.EditUserServiceRequestDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.ViewAllActiveUsersProfileServiceRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.ViewByUserIdServiceRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.AddRoleServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.AddUserServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.DeleteUserByUserIdServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.EditUserServiceResponseDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.ViewAllActiveUsersProfileServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.ViewAllUsersServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.ViewByUserIdServiceResponseDto;
 
@@ -46,6 +53,7 @@ class UserServiceImpl implements UserService {
     private final UserAnswersRepository userAnswersRepository;
     private final IdGenerator idGenerator;
     private final RoleRepository roleRepository;
+    private final UserFollowRepository followRepository;
 
     @Override
     public AddUserServiceResponseDto saveUser(AddUserServiceRequestDto serviceRequestDto) {
@@ -326,6 +334,48 @@ class UserServiceImpl implements UserService {
 
         } catch (Exception e) {
             log.error("Error occur view list active users", e);
+            throw e;
+        }
+    }
+
+    @Override
+    public List<ViewAllActiveUsersProfileServiceResponseDto> getAllActiveUsersProfile(
+            ViewAllActiveUsersProfileServiceRequestDto serviceRequestDto) {
+        try {
+            List<User> listUsers = this.userRepository.findAll()
+                    .stream()
+                    .filter(e -> Boolean.TRUE.equals(e.isEnable()))
+                    .limit(10)
+                    .collect(Collectors.toList());
+
+            Map<Long, UserFollow> userFollowMap = this.followRepository
+                    .findByFollowerUserIdAndFollowStatus(serviceRequestDto.getCurrentUserId(),
+                            FollowStatus.ACTIVE)
+                    .stream()
+                    .collect(Collectors.toMap(
+                            follow -> follow.getFollowing().getUserId(), // key
+                            Function.identity() // value
+                    ));
+
+            List<ViewAllActiveUsersProfileServiceResponseDto> listResponse = listUsers.stream().map(e -> {
+                ViewAllActiveUsersProfileServiceResponseDto rs = new ViewAllActiveUsersProfileServiceResponseDto();
+                rs.setUserId(e.getUserId());
+                rs.setFullName(e.getFullName());
+                rs.setProfileImage(e.getImage());
+
+                UserFollow userFollow = userFollowMap.getOrDefault(serviceRequestDto.getCurrentUserId(), null);
+                Boolean isFollowing = Boolean.FALSE;
+                if (!ObjectUtils.isEmpty(userFollow)) {
+                    isFollowing = userFollow.getFollowStatus().equals(FollowStatus.ACTIVE);
+                    rs.setIsFollowing(isFollowing);
+
+                }
+                return rs;
+            }).collect(Collectors.toList());
+
+            return listResponse;
+        } catch (Exception e) {
+            log.error("Error occur view All Active Users Profile", e);
             throw e;
         }
     }

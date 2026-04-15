@@ -1,5 +1,11 @@
 package com.yoyojobcare.auth.kukuapp.ku_ku_app.controller;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ObjectUtils;
@@ -17,10 +23,12 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.UserService;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.AddRoleServiceRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.AddUserServiceRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.EditUserServiceRequestDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.ViewAllActiveUsersProfileServiceRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.ViewByUserIdServiceRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.AddRoleServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.AddUserServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.EditUserServiceResponseDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.ViewAllActiveUsersProfileServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.ViewAllUsersServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.ViewByUserIdServiceResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.utility.MobileResponse;
@@ -132,6 +140,26 @@ public class UserController {
         response.setData(serviceResponseDto);
         response.setMessage("Fetch users counts Successful..");
         response.setStatus(Boolean.TRUE);
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/all-users-info")
+    public ResponseEntity<MobileResponse<List<ViewAllActiveUsersProfileServiceResponseDto>>> getAllActiveUsersProfile(
+        @RequestParam Long currentUserId
+    ) {
+
+        ViewAllActiveUsersProfileServiceRequestDto requestDto = new ViewAllActiveUsersProfileServiceRequestDto();
+        requestDto.setCurrentUserId(currentUserId);
+
+        List<ViewAllActiveUsersProfileServiceResponseDto> listServiceResponseDto = this.userService
+                .getAllActiveUsersProfile(requestDto);
+
+        MobileResponse<List<ViewAllActiveUsersProfileServiceResponseDto>> response = new MobileResponse<>();
+        response.setData(!listServiceResponseDto.isEmpty() ? listServiceResponseDto : Collections.emptyList());
+        response.setMessage(
+                !listServiceResponseDto.isEmpty() ? "Fetch all active users Successful.." : "Not found active users ");
+        response.setStatus(!listServiceResponseDto.isEmpty() ? Boolean.TRUE : Boolean.FALSE);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
