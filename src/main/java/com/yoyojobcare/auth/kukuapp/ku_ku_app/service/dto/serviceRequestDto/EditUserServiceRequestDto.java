@@ -29,5 +29,6 @@ public class EditUserServiceRequestDto {
     private String favoriteMoviesTv;
     private String booksPrefer;
     private String traveled;
+    private String country;
 
 }

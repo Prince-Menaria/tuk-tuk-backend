@@ -54,6 +54,7 @@ public class User extends BaseEntity {
     private String aboutMe;
     private String gender;         // "Male" or "Female"
     private LocalDate birthday;
+    private String country;
 
     @Enumerated(EnumType.STRING)
     private Provider provider;

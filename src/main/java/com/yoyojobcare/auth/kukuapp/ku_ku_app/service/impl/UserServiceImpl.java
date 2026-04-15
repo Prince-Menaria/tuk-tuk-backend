@@ -109,6 +109,8 @@ class UserServiceImpl implements UserService {
                 updateUser.setSpokenLanguage(serviceRequestDto.getSpokenLanguage());
             if (serviceRequestDto.getAboutMe() != null)
                 updateUser.setAboutMe(serviceRequestDto.getAboutMe());
+            if (serviceRequestDto.getCountry() != null)
+                updateUser.setCountry(serviceRequestDto.getCountry());
 
             // ✅ save() was missing before — without this DB update nahi hoga
             User updatedUser = userRepository.save(updateUser);
