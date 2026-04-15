@@ -326,8 +326,7 @@ class UserServiceImpl implements UserService {
     public ViewAllUsersServiceResponseDto getAllActiveUsers() {
         try {
             Long userCounts = 0L;
-            int size = this.userRepository.findAll().size();
-            userCounts = Long.valueOf(size);
+            userCounts = this.userRepository.count();
             ViewAllUsersServiceResponseDto rs = new ViewAllUsersServiceResponseDto();
             rs.setUserCounts(userCounts);
             return rs;
@@ -362,14 +361,12 @@ class UserServiceImpl implements UserService {
                 rs.setUserId(e.getUserId());
                 rs.setFullName(e.getFullName());
                 rs.setProfileImage(e.getImage());
-
-                UserFollow userFollow = userFollowMap.getOrDefault(serviceRequestDto.getCurrentUserId(), null);
-                Boolean isFollowing = Boolean.FALSE;
-                if (!ObjectUtils.isEmpty(userFollow)) {
-                    isFollowing = userFollow.getFollowStatus().equals(FollowStatus.ACTIVE);
-                    rs.setIsFollowing(isFollowing);
-
+                if (!userFollowMap.isEmpty()) {
+                    rs.setIsFollowing(userFollowMap.containsKey(e.getUserId()));
+                }else{
+                    rs.setIsFollowing(Boolean.FALSE);
                 }
+
                 return rs;
             }).collect(Collectors.toList());
 
