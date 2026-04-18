@@ -346,6 +346,7 @@ class UserServiceImpl implements UserService {
             List<User> listUsers = this.userRepository.findAll()
                     .stream()
                     .filter(e -> Boolean.TRUE.equals(e.isEnable()))
+                    // .limit(serviceRequestDto.getSize())
                     .filter(e -> !e.getUserId().equals(serviceRequestDto.getCurrentUserId()))
                     // .limit(10)
                     .collect(Collectors.toList());
