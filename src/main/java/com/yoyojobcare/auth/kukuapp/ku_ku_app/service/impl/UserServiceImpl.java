@@ -347,6 +347,8 @@ class UserServiceImpl implements UserService {
                     .stream()
                     .filter(e -> Boolean.TRUE.equals(e.isEnable()))
                     // .limit(serviceRequestDto.getSize())
+                    .filter(e -> !e.getUserId().equals(serviceRequestDto.getCurrentUserId()))
+                    // .limit(10)
                     .collect(Collectors.toList());
 
             Map<Long, UserFollow> userFollowMap = this.followRepository
