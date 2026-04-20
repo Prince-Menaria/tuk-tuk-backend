@@ -365,7 +365,7 @@ public class WalletServiceImpl implements WalletService {
                 .sourceType(sourceType)
                 .sourceDescription(sourceDescription)
                 .transactionDate(LocalDateTime.now())
-                .status(TransactionStatus.COMPLETED)
+                .status(TransactionStatus.COMPLETED)    // Add payment status
                 .build();
 
         return transactionRepository.save(transaction);

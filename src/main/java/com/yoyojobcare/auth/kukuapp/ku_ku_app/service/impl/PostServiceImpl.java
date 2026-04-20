@@ -22,6 +22,7 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.repository.PostCommentRepository;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.repository.PostLikeRepository;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.repository.PostRepository;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.repository.UserRepository;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.NotificationService;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.PostService;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.post.CommentRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.post.CreatePostRequestDto;
@@ -46,6 +47,7 @@ public class PostServiceImpl implements PostService {
     private final PostLikeRepository likeRepository;
     private final PostCommentRepository commentRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Override
     public PostResponseDto createPost(CreatePostRequestDto request) {
@@ -139,6 +141,17 @@ public class PostServiceImpl implements PostService {
 
             this.postRepository.save(post);
 
+            // ✅ toggleLike mein — like true hone pe
+            if (Boolean.TRUE.equals(liked)) {
+                this.notificationService.createNotification(
+                        post.getUser(), // receiver — post ka owner
+                        user, // sender — jo like kiya
+                        "POST_LIKE",
+                        user.getFullName() + " liked your post",
+                        post.getPostId(),
+                        "POST");
+            }
+
             return LikeResponseDto.builder()
                     .postId(request.getPostId())
                     .liked(liked)
@@ -184,6 +197,15 @@ public class PostServiceImpl implements PostService {
             // ✅ Comment count update
             post.setCommentCount(post.getCommentCount() + 1);
             this.postRepository.save(post);
+
+            // ✅ add Comment notification send
+            this.notificationService.createNotification(
+                    post.getUser(),
+                    user,
+                    "POST_COMMENT",
+                    user.getFullName() + " commented on your post",
+                    post.getPostId(),
+                    "POST");
 
             return this.toCommentDto(saved);
 
