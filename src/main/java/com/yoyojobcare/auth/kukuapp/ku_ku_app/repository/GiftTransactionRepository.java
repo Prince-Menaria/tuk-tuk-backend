@@ -13,4 +13,6 @@ public interface GiftTransactionRepository extends JpaRepository<GiftTransaction
     List<GiftTransaction> findBySenderUserIdOrderBySentAtDesc(Long senderId);
 
     List<GiftTransaction> findByReceiverUserIdOrderBySentAtDesc(Long receiverId);
+
+    
 }

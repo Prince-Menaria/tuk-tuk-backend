@@ -14,11 +14,13 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.GiftService;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.gift.AddGiftRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.gift.SendGiftRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.gift.ViewReceivedAllGiftUserRequestDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.gift.ViewSendedAllGiftUserRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.AddGiftResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.SendGiftResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.ViewGiftResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.ViewReceivedAllGiftUserResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.ViewRoomGiftResponseDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.ViewSendedAllGiftUserResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.utility.MobileResponse;
 
 import lombok.RequiredArgsConstructor;
@@ -88,16 +90,26 @@ public class GiftController {
                 .status(true).message("Gift history fetched successful..").data(history).build());
     }
 
-    // ✅ Room gift history
-    @GetMapping("/user-gift-received")
-    public ResponseEntity<MobileResponse<List<ViewReceivedAllGiftUserResponseDto>>> getReceivedAllGiftUser(
+    @GetMapping("/view-user-gift-received")
+    public ResponseEntity<MobileResponse<List<ViewReceivedAllGiftUserResponseDto>>> getReceivedAllGiftUserByReceiverId(
             @RequestParam Long receiverId) {
 
         ViewReceivedAllGiftUserRequestDto requestDto = new ViewReceivedAllGiftUserRequestDto();
         requestDto.setReceiverId(receiverId);
-        List<ViewReceivedAllGiftUserResponseDto> listServiceResponse = giftService.getReceivedAllGiftUser(requestDto);
+        List<ViewReceivedAllGiftUserResponseDto> listServiceResponse = giftService.getReceivedAllGiftUserByReceiverId(requestDto);
         return ResponseEntity.ok(MobileResponse.<List<ViewReceivedAllGiftUserResponseDto>>builder()
-                .status(true).message("Gift history fetched successful..").data(listServiceResponse).build());
+                .status(true).message("User all received gift fetched successful..").data(listServiceResponse).build());
+    }
+
+    @GetMapping("/view-user-gift-send")
+    public ResponseEntity<MobileResponse<List<ViewSendedAllGiftUserResponseDto>>> getSendedAllGiftUserBySenderId(
+            @RequestParam Long senderId) {
+
+        ViewSendedAllGiftUserRequestDto requestDto = new ViewSendedAllGiftUserRequestDto();
+        requestDto.setSenderId(senderId);
+        List<ViewSendedAllGiftUserResponseDto> listServiceResponse = giftService.getSendedAllGiftUserBySenderId(requestDto);
+        return ResponseEntity.ok(MobileResponse.<List<ViewSendedAllGiftUserResponseDto>>builder()
+                .status(true).message("User all received gift fetched successful..").data(listServiceResponse).build());
     }
 
 }

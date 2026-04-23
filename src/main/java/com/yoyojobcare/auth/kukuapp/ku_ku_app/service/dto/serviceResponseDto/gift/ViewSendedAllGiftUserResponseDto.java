@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ViewReceivedAllGiftUserResponseDto {
+public class ViewSendedAllGiftUserResponseDto {
 
     private Long giftId;
     private String giftName;

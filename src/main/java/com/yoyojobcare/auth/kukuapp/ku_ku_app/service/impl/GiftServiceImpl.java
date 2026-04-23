@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.entity.ChatRoom;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.entity.Gift;
@@ -33,11 +34,13 @@ import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.GiftService;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.gift.AddGiftRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.gift.SendGiftRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.gift.ViewReceivedAllGiftUserRequestDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.gift.ViewSendedAllGiftUserRequestDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.AddGiftResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.SendGiftResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.ViewGiftResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.ViewReceivedAllGiftUserResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.ViewRoomGiftResponseDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.gift.ViewSendedAllGiftUserResponseDto;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -408,15 +411,59 @@ public class GiftServiceImpl implements GiftService {
     }
 
     @Override
-    public List<ViewReceivedAllGiftUserResponseDto> getReceivedAllGiftUser(ViewReceivedAllGiftUserRequestDto serviceRequest) {
+    public List<ViewReceivedAllGiftUserResponseDto> getReceivedAllGiftUserByReceiverId(
+            ViewReceivedAllGiftUserRequestDto serviceRequest) {
         try {
             log.info("Request of get Received All Gift User {} :: " + serviceRequest);
 
+            List<GiftTransaction> listGiftTransactions = this.giftTransactionRepository
+                    .findByReceiverUserIdOrderBySentAtDesc(serviceRequest.getReceiverId());
+            List<ViewReceivedAllGiftUserResponseDto> listServiceResponseDto = new LinkedList<>();
 
-            // TODO Auto-generated method stub
-            throw new UnsupportedOperationException("Unimplemented method 'receivedGiftUser'");
+            if (!ObjectUtils.isEmpty(listGiftTransactions)) {
+                listServiceResponseDto = listGiftTransactions.stream()
+                        .map(e -> {
+                            ViewReceivedAllGiftUserResponseDto rs = new ViewReceivedAllGiftUserResponseDto();
+                            rs.setGiftId(e.getGift().getGiftId());
+                            rs.setGiftName(e.getGift().getGiftName());
+                            rs.setGiftImage(e.getGift().getGiftImage());
+                            return rs;
+
+                        }).collect(Collectors.toList());
+
+            }
+            return listServiceResponseDto;
         } catch (Exception e) {
             log.error("Error occur get Received All Gift User ..", e);
+            throw e;
+        }
+    }
+
+    @Override
+    public List<ViewSendedAllGiftUserResponseDto> getSendedAllGiftUserBySenderId(
+            ViewSendedAllGiftUserRequestDto serviceRequest) {
+        try {
+            log.info("Request of get Sended All Gift User {} :: " + serviceRequest);
+
+            List<GiftTransaction> listGiftTransactions = this.giftTransactionRepository
+                    .findBySenderUserIdOrderBySentAtDesc(serviceRequest.getSenderId());
+            List<ViewSendedAllGiftUserResponseDto> listServiceResponseDto = new LinkedList<>();
+
+            if (!ObjectUtils.isEmpty(listGiftTransactions)) {
+                listServiceResponseDto = listGiftTransactions.stream()
+                        .map(e -> {
+                            ViewSendedAllGiftUserResponseDto rs = new ViewSendedAllGiftUserResponseDto();
+                            rs.setGiftId(e.getGift().getGiftId());
+                            rs.setGiftName(e.getGift().getGiftName());
+                            rs.setGiftImage(e.getGift().getGiftImage());
+                            return rs;
+
+                        }).collect(Collectors.toList());
+
+            }
+            return listServiceResponseDto;
+        } catch (Exception e) {
+            log.error("Error occur get Sended All Gift User ..", e);
             throw e;
         }
     }
@@ -490,5 +537,7 @@ public class GiftServiceImpl implements GiftService {
                 .build();
         return walletRepository.save(wallet);
     }
+
+ 
 
 }
