@@ -8,6 +8,11 @@ import org.springframework.web.bind.annotation.*;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.entity.User;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.security.JwtTokenProvider;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.AuthService;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.OtpService;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.otp.SendOtpRequestDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceRequestDto.otp.VerifyOtpRequestDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.otp.OtpLoginResponseDto;
+import com.yoyojobcare.auth.kukuapp.ku_ku_app.service.dto.serviceResponseDto.otp.SendOtpResponseDto;
 import com.yoyojobcare.auth.kukuapp.ku_ku_app.utility.MobileResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,6 +35,7 @@ public class AuthController {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthService authService;
+    private final OtpService otpService;
 
     @Operation(summary = "Get Current User", security = @SecurityRequirement(name = "bearerAuth"))
     @GetMapping("/me")
@@ -204,6 +210,36 @@ public class AuthController {
             response.setMessage("Logout failed: " + e.getMessage());
 
             return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    // ✅ OTP bhejo
+    @PostMapping("/send-otp")
+    public ResponseEntity<MobileResponse<SendOtpResponseDto>> sendOtp(
+            @RequestBody SendOtpRequestDto request) {
+        try {
+            SendOtpResponseDto response = this.otpService.sendOtp(request);
+            return ResponseEntity.ok(MobileResponse.<SendOtpResponseDto>builder()
+                    .status(true).message("OTP sent").data(response).build());
+        } catch (Exception e) {
+            log.error("Send OTP error: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(MobileResponse.<SendOtpResponseDto>builder()
+                    .status(false).message(e.getMessage()).build());
+        }
+    }
+
+    // ✅ OTP verify + login
+    @PostMapping("/verify-otp")
+    public ResponseEntity<MobileResponse<OtpLoginResponseDto>> verifyOtp(
+            @RequestBody VerifyOtpRequestDto request) {
+        try {
+            OtpLoginResponseDto response = this.otpService.verifyOtpAndLogin(request);
+            return ResponseEntity.ok(MobileResponse.<OtpLoginResponseDto>builder()
+                    .status(true).message(response.getMessage()).data(response).build());
+        } catch (Exception e) {
+            log.error("Verify OTP error: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(MobileResponse.<OtpLoginResponseDto>builder()
+                    .status(false).message(e.getMessage()).build());
         }
     }
 
